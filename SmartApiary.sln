@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartApiary.Domain", "SmartApiary.Domain\SmartApiary.Domain.csproj", "{81530628-A596-490B-87E5-6CEA9D3B72DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartApiary.Application", "SmartApiary.Application\SmartApiary.Application.csproj", "{BB0B863D-FCC4-4A38-978B-8C359954AA4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartApiary.Infrastructure", "SmartApiary.Infrastructure\SmartApiary.Infrastructure.csproj", "{AD515D61-8BCF-4C66-9D6B-DA1C7F1B2083}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartApiary.WebApi", "SmartApiary.WebApi\SmartApiary.WebApi.csproj", "{9D591ACF-0226-4FFF-B91D-F03837AD6A19}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81530628-A596-490B-87E5-6CEA9D3B72DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81530628-A596-490B-87E5-6CEA9D3B72DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81530628-A596-490B-87E5-6CEA9D3B72DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81530628-A596-490B-87E5-6CEA9D3B72DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB0B863D-FCC4-4A38-978B-8C359954AA4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB0B863D-FCC4-4A38-978B-8C359954AA4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB0B863D-FCC4-4A38-978B-8C359954AA4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB0B863D-FCC4-4A38-978B-8C359954AA4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD515D61-8BCF-4C66-9D6B-DA1C7F1B2083}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD515D61-8BCF-4C66-9D6B-DA1C7F1B2083}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD515D61-8BCF-4C66-9D6B-DA1C7F1B2083}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD515D61-8BCF-4C66-9D6B-DA1C7F1B2083}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D591ACF-0226-4FFF-B91D-F03837AD6A19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D591ACF-0226-4FFF-B91D-F03837AD6A19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D591ACF-0226-4FFF-B91D-F03837AD6A19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D591ACF-0226-4FFF-B91D-F03837AD6A19}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
