@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SmartApiary.Application.Common.Interfaces;
 using SmartApiary.Infrastructure.Persistence;
 using SmartApiary.Infrastructure.Persistence.Repositories;
+using SmartApiary.Infrastructure.Persistence.AzureTable.Repositories;
 using SmartApiary.Infrastructure.Services;
 
 public static class ServiceCollectionExtensions
@@ -22,6 +23,12 @@ public static class ServiceCollectionExtensions
 
         services.Configure<JwtSettings>(
             configuration.GetSection("JwtSettings"));
+
+        services.Configure<AzureTableOptions>(
+            configuration.GetSection("AzureTableOptions"));
+
+        services.AddScoped<IApiaryRepository, ApiaryRepository>();
+        services.AddScoped<IHiveRepository, HiveRepository>();
 
         return services;
     }
