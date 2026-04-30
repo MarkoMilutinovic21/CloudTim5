@@ -16,4 +16,5 @@ public interface IUserRepository
     Task SaveAsync(User user, CancellationToken ct = default);
     Task UpdateAsync(User user, CancellationToken ct = default);
     Task DeleteAsync(User user, CancellationToken ct = default);
+    Task<User?> GetByActivationTokenAsync(string token, CancellationToken ct = default);
 }

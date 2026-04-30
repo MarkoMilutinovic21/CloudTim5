@@ -12,6 +12,8 @@ public class User : AggregateRoot
     public string Role { get; private set; }
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public string? ActivationToken { get; private set; }
+    public DateTime? ActivationTokenExpiry { get; private set; }
 
     private User() { }
 
@@ -32,22 +34,24 @@ public class User : AggregateRoot
             PasswordHash = passwordHash,
             Role = role,
             IsActive = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ActivationToken = Guid.NewGuid().ToString("N"),
+            ActivationTokenExpiry = DateTime.UtcNow.AddHours(24)
         };
     }
 
-    public void Suspend()
-    {
-        IsActive = false;
-    }
+    public void Suspend() => IsActive = false;
 
-    public void Activate()
-    {
-        IsActive = true;
-    }
+    public void Activate() => IsActive = true;
 
     public void SetPassword(string passwordHash)
     {
         PasswordHash = passwordHash;
+        IsActive = true;
+        ActivationToken = null;
+        ActivationTokenExpiry = null;
     }
+
+    public bool IsActivationTokenValid(string token) =>
+        ActivationToken == token && ActivationTokenExpiry > DateTime.UtcNow;
 }

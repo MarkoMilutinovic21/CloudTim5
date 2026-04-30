@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import CreateUserPage from './pages/CreateUserPage'
 import UsersPage from './pages/UsersPage'
+import ActivatePage from './pages/ActivatePage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -17,6 +18,7 @@ function App() {
           element={token ? <DashboardPage /> : <Navigate to="/login" />}
         />
         <Route path="/admin/users" element={<UsersPage />} />
+        <Route path="/activate" element={<ActivatePage />} />
       </Routes>
     </BrowserRouter>
   )
