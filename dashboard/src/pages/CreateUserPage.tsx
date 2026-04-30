@@ -1,9 +1,18 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const ROLES = ['Beekeeper', 'Farmer']
 
+interface FormErrors {
+  firstName?: string
+  lastName?: string
+  phone?: string
+  email?: string
+}
+
 function CreateUserPage() {
+  const navigate = useNavigate()
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -13,13 +22,35 @@ function CreateUserPage() {
   })
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({})
+  const [phoneWarning, setPhoneWarning] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+    setFieldErrors({ ...fieldErrors, [e.target.name]: undefined })
+  }
+
+  const validate = (): boolean => {
+    const errors: FormErrors = {}
+    if (!form.firstName.trim()) errors.firstName = 'Ime je obavezno.'
+    if (!form.lastName.trim()) errors.lastName = 'Prezime je obavezno.'
+    if (!form.phone.trim()) {
+      errors.phone = 'Telefon je obavezan.'
+    } else if (!/^\d{6,15}$/.test(form.phone)) {
+      errors.phone = 'Telefon mora sadržati samo cifre (6-15 cifara).'
+    }
+    if (!form.email.trim()) {
+      errors.email = 'Email je obavezan.'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = 'Email adresa nije validna.'
+    }
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleSubmit = async () => {
+    if (!validate()) return
     setLoading(true)
     setError('')
     setSuccess(false)
@@ -30,6 +61,7 @@ function CreateUserPage() {
       })
       setSuccess(true)
       setForm({ firstName: '', lastName: '', phone: '', email: '', role: 'Beekeeper' })
+      setPhoneWarning('')
     } catch {
       setError('Greška pri kreiranju korisnika.')
     } finally {
@@ -60,8 +92,13 @@ function CreateUserPage() {
             name="firstName"
             value={form.firstName}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+            className={`w-full bg-slate-800 text-white border rounded px-4 py-3 focus:outline-none focus:border-yellow-500 ${
+              fieldErrors.firstName ? 'border-red-500' : 'border-slate-700'
+            }`}
           />
+          {fieldErrors.firstName && (
+            <p className="text-red-400 text-xs mt-1">{fieldErrors.firstName}</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -70,8 +107,13 @@ function CreateUserPage() {
             name="lastName"
             value={form.lastName}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+            className={`w-full bg-slate-800 text-white border rounded px-4 py-3 focus:outline-none focus:border-yellow-500 ${
+              fieldErrors.lastName ? 'border-red-500' : 'border-slate-700'
+            }`}
           />
+          {fieldErrors.lastName && (
+            <p className="text-red-400 text-xs mt-1">{fieldErrors.lastName}</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -79,9 +121,34 @@ function CreateUserPage() {
           <input
             name="phone"
             value={form.phone}
-            onChange={handleChange}
-            className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+            maxLength={15}
+            onChange={(e) => {
+              handleChange(e)
+              if (e.target.value.length >= 15) {
+                setPhoneWarning('Dostignuti maksimalan broj cifara (15).')
+              } else {
+                setPhoneWarning('')
+              }
+            }}
+            onKeyDown={(e) => {
+              if (
+                !/[\d]/.test(e.key) &&
+                !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)
+              ) {
+                e.preventDefault()
+                setPhoneWarning('Dozvoljeno je uneti samo cifre.')
+              }
+            }}
+            className={`w-full bg-slate-800 text-white border rounded px-4 py-3 focus:outline-none focus:border-yellow-500 ${
+              fieldErrors.phone ? 'border-red-500' : 'border-slate-700'
+            }`}
           />
+          {fieldErrors.phone && (
+            <p className="text-red-400 text-xs mt-1">{fieldErrors.phone}</p>
+          )}
+          {phoneWarning && !fieldErrors.phone && (
+            <p className="text-yellow-400 text-xs mt-1">{phoneWarning}</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -91,8 +158,13 @@ function CreateUserPage() {
             type="email"
             value={form.email}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+            className={`w-full bg-slate-800 text-white border rounded px-4 py-3 focus:outline-none focus:border-yellow-500 ${
+              fieldErrors.email ? 'border-red-500' : 'border-slate-700'
+            }`}
           />
+          {fieldErrors.email && (
+            <p className="text-red-400 text-xs mt-1">{fieldErrors.email}</p>
+          )}
         </div>
 
         <div className="mb-6">
@@ -111,13 +183,21 @@ function CreateUserPage() {
           </select>
         </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-3 rounded transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Kreiranje...' : 'Kreiraj korisnika'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-3 rounded transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Kreiranje...' : 'Kreiraj korisnika'}
+          </button>
+          <button
+            onClick={() => navigate('/admin/users')}
+            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded transition-colors"
+          >
+            Odustani
+          </button>
+        </div>
       </div>
     </div>
   )
