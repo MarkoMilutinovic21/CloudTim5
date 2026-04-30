@@ -35,4 +35,19 @@ public class User : AggregateRoot
             CreatedAt = DateTime.UtcNow
         };
     }
+
+    public void Suspend()
+    {
+        IsActive = false;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+    }
+
+    public void SetPassword(string passwordHash)
+    {
+        PasswordHash = passwordHash;
+    }
 }

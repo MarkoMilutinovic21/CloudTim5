@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import CreateUserPage from './pages/CreateUserPage'
+import UsersPage from './pages/UsersPage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -15,6 +16,7 @@ function App() {
           path="/"
           element={token ? <DashboardPage /> : <Navigate to="/login" />}
         />
+        <Route path="/admin/users" element={<UsersPage />} />
       </Routes>
     </BrowserRouter>
   )
