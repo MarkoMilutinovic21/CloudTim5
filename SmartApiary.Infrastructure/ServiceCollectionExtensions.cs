@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IApiaryRepository, ApiaryRepository>();
         services.AddScoped<IHiveRepository, HiveRepository>();
+        services.AddScoped<IParcelRepository, ParcelRepository>();
 
         return services;
     }
