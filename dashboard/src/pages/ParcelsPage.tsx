@@ -1,0 +1,445 @@
+import { useEffect, useMemo, useState } from 'react'
+import axios from 'axios'
+import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+interface Parcel {
+  id: string
+  name: string
+  area: number
+  location: string
+  latitude: number
+  longitude: number
+  description: string
+  ownerId: string
+  createdAt: string
+}
+
+interface ParcelForm {
+  name: string
+  area: string
+  location: string
+  latitude: string
+  longitude: string
+  description: string
+}
+
+const emptyForm: ParcelForm = {
+  name: '',
+  area: '',
+  location: '',
+  latitude: '',
+  longitude: '',
+  description: '',
+}
+
+const markerIcon = new L.Icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+})
+
+function ParcelsPage() {
+  const [parcels, setParcels] = useState<Parcel[]>([])
+  const [form, setForm] = useState<ParcelForm>(emptyForm)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const token = localStorage.getItem('token')
+  const headers = { Authorization: `Bearer ${token}` }
+
+  const mapCenter = useMemo<[number, number]>(() => {
+    if (parcels.length > 0) {
+      return [parcels[0].latitude, parcels[0].longitude]
+    }
+
+    return [44.7866, 20.4489]
+  }, [parcels])
+
+  const fetchParcels = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await axios.get<Parcel[]>('http://localhost:5108/api/Parcels', {
+        headers,
+      })
+
+      setParcels(response.data)
+    } catch (err: any) {
+      console.error('Greška pri učitavanju parcela:', err)
+
+      if (err.response) {
+        setError(`Greška pri učitavanju parcela. Status: ${err.response.status}`)
+      } else {
+        setError('Greška pri učitavanju parcela. Backend nije dostupan.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchParcels()
+  }, [])
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm({
+      ...form,
+      [event.target.name]: event.target.value,
+    })
+  }
+
+  const validateForm = () => {
+    if (!form.name.trim()) return 'Naziv parcele je obavezan.'
+    if (!form.location.trim()) return 'Lokacija je obavezna.'
+
+    const area = Number(form.area)
+    const latitude = Number(form.latitude)
+    const longitude = Number(form.longitude)
+
+    if (Number.isNaN(area) || area <= 0) return 'Površina mora biti veća od 0.'
+
+    if (Number.isNaN(latitude) || latitude < -90 || latitude > 90) {
+      return 'Latitude mora biti između -90 i 90.'
+    }
+
+    if (Number.isNaN(longitude) || longitude < -180 || longitude > 180) {
+      return 'Longitude mora biti između -180 i 180.'
+    }
+
+    return ''
+  }
+
+  const handleSubmit = async () => {
+    const validationError = validateForm()
+
+    if (validationError) {
+      setError(validationError)
+      setSuccess('')
+      return
+    }
+
+    setSaving(true)
+    setError('')
+    setSuccess('')
+
+    const payload = {
+      name: form.name,
+      area: Number(form.area),
+      location: form.location,
+      latitude: Number(form.latitude),
+      longitude: Number(form.longitude),
+      description: form.description,
+    }
+
+    try {
+      if (editingId) {
+        await axios.put(`http://localhost:5108/api/Parcels/${editingId}`, payload, { headers })
+        setSuccess('Parcela je uspešno izmenjena.')
+      } else {
+        await axios.post('http://localhost:5108/api/Parcels', payload, { headers })
+        setSuccess('Parcela je uspešno dodata.')
+      }
+
+      setForm(emptyForm)
+      setEditingId(null)
+      await fetchParcels()
+    } catch (err: any) {
+      console.error('Greška pri čuvanju parcele:', err)
+
+      if (err.response) {
+        setError(`Greška pri čuvanju parcele. Status: ${err.response.status}`)
+      } else {
+        setError('Greška pri čuvanju parcele. Backend nije dostupan.')
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEdit = (parcel: Parcel) => {
+    setEditingId(parcel.id)
+    setForm({
+      name: parcel.name,
+      area: parcel.area.toString(),
+      location: parcel.location,
+      latitude: parcel.latitude.toString(),
+      longitude: parcel.longitude.toString(),
+      description: parcel.description,
+    })
+
+    setError('')
+    setSuccess('')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setForm(emptyForm)
+    setError('')
+    setSuccess('')
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Da li ste sigurni da želite da obrišete parcelu?')) return
+
+    try {
+      await axios.delete(`http://localhost:5108/api/Parcels/${id}`, { headers })
+      setSuccess('Parcela je uspešno obrisana.')
+      await fetchParcels()
+    } catch (err: any) {
+      console.error('Greška pri brisanju parcele:', err)
+
+      if (err.response) {
+        setError(`Greška pri brisanju parcele. Status: ${err.response.status}`)
+      } else {
+        setError('Greška pri brisanju parcele. Backend nije dostupan.')
+      }
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+        Učitavanje parcela...
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <a href="/" className="text-slate-400 hover:text-yellow-400 text-sm">
+              ← Nazad na dashboard
+            </a>
+            <h1 className="text-2xl font-bold text-white mt-2">Moje parcele</h1>
+            <p className="text-slate-400 text-sm">
+              Registracija parcela sa koordinatama i prikazom na mapi.
+            </p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded mb-4 text-sm">
+            {success}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <h2 className="text-white font-bold text-lg mb-4">
+              {editingId ? 'Izmena parcele' : 'Nova parcela'}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Naziv</label>
+                <input
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                  placeholder="Upišite naziv parcele"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Površina</label>
+                <input
+                  name="area"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.area}
+                  onChange={handleChange}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                  placeholder="Upišite površinu parcele"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Lokacija</label>
+                <input
+                  name="location"
+                  value={form.location}
+                  onChange={handleChange}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                  placeholder="Upišite lokaciju parcele"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">Latitude</label>
+                  <input
+                    name="latitude"
+                    type="number"
+                    step="0.000001"
+                    value={form.latitude}
+                    onChange={handleChange}
+                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                    placeholder="Upišite geografsku širinu"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">Longitude</label>
+                  <input
+                    name="longitude"
+                    type="number"
+                    step="0.000001"
+                    value={form.longitude}
+                    onChange={handleChange}
+                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                    placeholder="Upišite geografsku dužinu"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Opis</label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500 min-h-24"
+                  placeholder="Upišite opis parcele"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-3 rounded transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Čuvanje...' : editingId ? 'Sačuvaj izmene' : 'Dodaj parcelu'}
+                </button>
+
+                {editingId && (
+                  <button
+                    onClick={handleCancelEdit}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded transition-colors"
+                  >
+                    Odustani
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <h2 className="text-white font-bold text-lg mb-4">Mapa parcela</h2>
+
+              <div className="h-96 rounded-xl overflow-hidden">
+                <MapContainer
+                  center={mapCenter}
+                  zoom={parcels.length > 0 ? 12 : 7}
+                  scrollWheelZoom
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    attribution="&copy; OpenStreetMap contributors"
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+
+                  {parcels.map((parcel) => (
+                    <Marker
+                      key={parcel.id}
+                      position={[parcel.latitude, parcel.longitude]}
+                      icon={markerIcon}
+                    >
+                      <Popup>
+                        <strong>{parcel.name}</strong>
+                        <br />
+                        {parcel.location}
+                        <br />
+                        Površina: {parcel.area}
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-800">
+                <h2 className="text-white font-bold text-lg">Lista parcela</h2>
+              </div>
+
+              {parcels.length === 0 ? (
+                <div className="p-6 text-slate-400">
+                  Još uvek nemate registrovane parcele.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-800">
+                        <th className="text-left text-slate-400 px-6 py-4 font-medium">Naziv</th>
+                        <th className="text-left text-slate-400 px-6 py-4 font-medium">Lokacija</th>
+                        <th className="text-left text-slate-400 px-6 py-4 font-medium">Površina</th>
+                        <th className="text-left text-slate-400 px-6 py-4 font-medium">Koordinate</th>
+                        <th className="text-left text-slate-400 px-6 py-4 font-medium">Akcije</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {parcels.map((parcel) => (
+                        <tr
+                          key={parcel.id}
+                          className="border-b border-slate-800 hover:bg-slate-800/50"
+                        >
+                          <td className="px-6 py-4 text-white font-medium">{parcel.name}</td>
+                          <td className="px-6 py-4 text-slate-300">{parcel.location}</td>
+                          <td className="px-6 py-4 text-slate-300">{parcel.area}</td>
+                          <td className="px-6 py-4 text-slate-300">
+                            {parcel.latitude}, {parcel.longitude}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEdit(parcel)}
+                                className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded transition-colors"
+                              >
+                                Izmeni
+                              </button>
+
+                              <button
+                                onClick={() => handleDelete(parcel.id)}
+                                className="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-1 rounded transition-colors"
+                              >
+                                Obriši
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default ParcelsPage
