@@ -32,7 +32,8 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
 }
 
 public class CreateUserCommandHandler(
-    IUserRepository userRepository) : IRequestHandler<CreateUserCommand>
+    IUserRepository userRepository,
+    IEmailService emailService) : IRequestHandler<CreateUserCommand>
 {
     public async Task Handle(CreateUserCommand request, CancellationToken ct)
     {
@@ -45,5 +46,6 @@ public class CreateUserCommandHandler(
             request.Phone);
 
         await userRepository.SaveAsync(user, ct);
+        await emailService.SendActivationEmailAsync(user.Email, user.ActivationToken, ct);
     }
 }
