@@ -12,8 +12,15 @@ public class AuthController(IMediator mediator) : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken ct)
     {
-        var result = await mediator.Send(command, ct);
-        return Ok(result);
+        try
+        {
+            var result = await mediator.Send(command, ct);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
     }
 
     [HttpPost("activate")]

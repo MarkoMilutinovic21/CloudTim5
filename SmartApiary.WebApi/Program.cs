@@ -114,6 +114,18 @@ using (var scope = app.Services.CreateScope())
         context.Users.Add(farmer);
     }
 
+    if (!context.Users.Any(u => u.Email == "beekeeper@test.com"))
+    {
+        var beekeeper = User.Create(
+            "Test",
+            "Beekeeper",
+            "beekeeper@test.com",
+            BCrypt.Net.BCrypt.HashPassword("Beekeeper123!"),
+            UserRoles.Beekeeper);
+        beekeeper.Activate();
+        context.Users.Add(beekeeper);
+    }
+
     await context.SaveChangesAsync();
 }
 
