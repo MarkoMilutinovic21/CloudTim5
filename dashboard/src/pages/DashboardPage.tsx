@@ -71,6 +71,20 @@ function DashboardPage() {
             </div>
           </div>
         )}
+
+        {role === 'Beekeeper' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              onClick={() => navigate('/beekeeper/telemetry')}
+              className="bg-slate-900 border border-slate-800 hover:border-yellow-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Telemetrija</h3>
+              <p className="text-slate-400 text-sm">
+                Pregled merenja pametne vage i osnovne analitike kosnice
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

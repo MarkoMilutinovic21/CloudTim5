@@ -29,11 +29,16 @@ public class GetHiveTelemetryQueryHandler(
         GetHiveTelemetryQuery request,
         CancellationToken ct)
     {
+        DateTime? to = request.To;
+
+        if (to.HasValue && to.Value.TimeOfDay == TimeSpan.Zero)
+            to = to.Value.Date.AddDays(1).AddTicks(-1);
+
         IReadOnlyCollection<TelemetryMeasurement> measurements =
             await measurementRepository.GetByHiveIdAsync(
                 request.HiveId,
                 request.From,
-                request.To,
+                to,
                 ct);
 
         return measurements
