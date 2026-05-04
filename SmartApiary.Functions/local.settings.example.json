@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureTableOptions:ConnectionString": "UseDevelopmentStorage=true",
+    "AzureTableOptions:DevicesTable": "Devices",
+    "AzureTableOptions:MeasurementsTable": "Measurements",
+    "AzureQueueOptions:ConnectionString": "UseDevelopmentStorage=true",
+    "AzureQueueOptions:TelemetryQueue": "telemetry-queue"
+  }
+}
