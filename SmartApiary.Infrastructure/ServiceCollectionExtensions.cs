@@ -30,7 +30,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApiaryRepository, ApiaryRepository>();
         services.AddScoped<IHiveRepository, HiveRepository>();
         services.AddScoped<IParcelRepository, ParcelRepository>();
+        services.AddScoped<IPesticideTreatmentRepository, PesticideTreatmentRepository>();
+
         services.AddScoped<IEmailService, EmailService>();
+
         return services;
     }
 }
