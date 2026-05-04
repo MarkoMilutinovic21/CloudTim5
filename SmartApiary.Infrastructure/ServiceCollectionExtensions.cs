@@ -31,6 +31,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IHiveRepository, HiveRepository>();
         services.AddScoped<IParcelRepository, ParcelRepository>();
         services.AddScoped<IPesticideTreatmentRepository, PesticideTreatmentRepository>();
+        services.AddScoped<IDeviceRepository, DeviceRepository>();
+        services.AddScoped<ITelemetryMeasurementRepository, TelemetryMeasurementRepository>();
 
         services.AddScoped<IEmailService, EmailService>();
 

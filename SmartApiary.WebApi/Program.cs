@@ -90,7 +90,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (!context.Users.Any())
+    if (!context.Users.Any(u => u.Email == "admin@smartapiary.com"))
     {
         var admin = User.Create(
             "Admin",
@@ -98,9 +98,23 @@ using (var scope = app.Services.CreateScope())
             "admin@smartapiary.com",
             BCrypt.Net.BCrypt.HashPassword("Admin123!"),
             UserRoles.Admin);
+        admin.Activate();
         context.Users.Add(admin);
-        await context.SaveChangesAsync();
     }
+
+    if (!context.Users.Any(u => u.Email == "farmer@test.com"))
+    {
+        var farmer = User.Create(
+            "Test",
+            "Farmer",
+            "farmer@test.com",
+            BCrypt.Net.BCrypt.HashPassword("Farmer123!"),
+            UserRoles.Farmer);
+        farmer.Activate();
+        context.Users.Add(farmer);
+    }
+
+    await context.SaveChangesAsync();
 }
 
 app.Run();
