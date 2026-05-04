@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartApiary.WebApi", "Smart
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartApiary.Functions", "SmartApiary.Functions\SmartApiary.Functions.csproj", "{9E4DD374-D0D3-4431-8A4C-DB8D63BCC6F2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartApiary.Simulator", "SmartApiary.Simulator\SmartApiary.Simulator.csproj", "{280DA53A-FDF9-4298-BEAE-DC8FB0D786BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{9E4DD374-D0D3-4431-8A4C-DB8D63BCC6F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E4DD374-D0D3-4431-8A4C-DB8D63BCC6F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E4DD374-D0D3-4431-8A4C-DB8D63BCC6F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{280DA53A-FDF9-4298-BEAE-DC8FB0D786BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{280DA53A-FDF9-4298-BEAE-DC8FB0D786BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{280DA53A-FDF9-4298-BEAE-DC8FB0D786BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{280DA53A-FDF9-4298-BEAE-DC8FB0D786BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
