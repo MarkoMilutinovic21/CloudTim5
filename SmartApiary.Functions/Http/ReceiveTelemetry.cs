@@ -2,6 +2,7 @@ namespace SmartApiary.Functions.Http;
 
 using System.Text.Json;
 using Azure.Storage.Queues;
+using Azure.Storage.Queues.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -65,7 +66,11 @@ public class ReceiveTelemetry(
 
         QueueClient queueClient = new(
             queueOptions.Value.ConnectionString,
-            queueOptions.Value.TelemetryQueue);
+            queueOptions.Value.TelemetryQueue,
+            new QueueClientOptions
+            {
+                MessageEncoding = QueueMessageEncoding.Base64
+            });
 
         await queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
