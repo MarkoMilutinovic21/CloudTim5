@@ -39,7 +39,9 @@ function DashboardPage() {
               className="bg-slate-900 border border-slate-800 hover:border-yellow-500 rounded-xl p-6 cursor-pointer transition-colors"
             >
               <h3 className="text-white font-bold text-lg mb-1">Korisnici</h3>
-              <p className="text-slate-400 text-sm">Upravljanje korisničkim nalozima</p>
+              <p className="text-slate-400 text-sm">
+                Upravljanje korisničkim nalozima
+              </p>
             </div>
           </div>
         )}
@@ -53,6 +55,18 @@ function DashboardPage() {
               <h3 className="text-white font-bold text-lg mb-1">Parcele</h3>
               <p className="text-slate-400 text-sm">
                 Registracija, izmena, brisanje i prikaz parcela na mapi
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/farmer/pesticide-treatments')}
+              className="bg-slate-900 border border-slate-800 hover:border-yellow-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">
+                Najave tretiranja pesticidima
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Zakazivanje, pomeranje i otkazivanje tretiranja parcela
               </p>
             </div>
           </div>

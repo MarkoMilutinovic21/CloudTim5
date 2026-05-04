@@ -5,6 +5,7 @@ import CreateUserPage from './pages/CreateUserPage'
 import UsersPage from './pages/UsersPage'
 import ActivatePage from './pages/ActivatePage'
 import ParcelsPage from './pages/ParcelsPage'
+import PesticideTreatmentsPage from './pages/PesticideTreatmentsPage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -22,6 +23,10 @@ function App() {
         <Route
           path="/farmer/parcels"
           element={token ? <ParcelsPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/farmer/pesticide-treatments"
+          element={token ? <PesticideTreatmentsPage /> : <Navigate to="/login" />}
         />
         <Route path="/activate" element={<ActivatePage />} />
       </Routes>
