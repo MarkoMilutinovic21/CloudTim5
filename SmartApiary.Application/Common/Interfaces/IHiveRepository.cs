@@ -11,6 +11,7 @@ using SmartApiary.Domain.Models;
 public interface IHiveRepository
 {
     Task<Hive?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyCollection<Hive>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyCollection<Hive>> GetByApiaryIdAsync(Guid apiaryId, CancellationToken ct = default);
     Task SaveAsync(Hive hive, CancellationToken ct = default);
     Task UpdateAsync(Hive hive, CancellationToken ct = default);

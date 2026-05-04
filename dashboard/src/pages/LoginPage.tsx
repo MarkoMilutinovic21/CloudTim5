@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 
 function LoginPage() {
@@ -6,6 +6,10 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    localStorage.clear()
+  }, [])
 
   const handleLogin = async () => {
     setLoading(true)

@@ -27,12 +27,39 @@ public class DeviceRepository(IOptions<AzureTableOptions> options) : IDeviceRepo
         return null;
     }
 
+    public async Task<IReadOnlyCollection<Device>> GetAllAsync(CancellationToken ct = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+
+        var results = new List<Device>();
+        await foreach (DeviceEntity entity in _tableClient.QueryAsync<DeviceEntity>(cancellationToken: ct))
+        {
+            results.Add(MapToDomain(entity));
+        }
+
+        return results.AsReadOnly();
+    }
+
     public async Task<Device?> GetBySerialNumberAsync(string serialNumber, CancellationToken ct = default)
     {
         await _tableClient.CreateIfNotExistsAsync(ct);
 
         await foreach (DeviceEntity entity in _tableClient.QueryAsync<DeviceEntity>(
             e => e.PartitionKey == serialNumber,
+            cancellationToken: ct))
+        {
+            return MapToDomain(entity);
+        }
+
+        return null;
+    }
+
+    public async Task<Device?> GetByHiveIdAsync(Guid hiveId, CancellationToken ct = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+
+        await foreach (DeviceEntity entity in _tableClient.QueryAsync<DeviceEntity>(
+            e => e.HiveId == hiveId.ToString(),
             cancellationToken: ct))
         {
             return MapToDomain(entity);

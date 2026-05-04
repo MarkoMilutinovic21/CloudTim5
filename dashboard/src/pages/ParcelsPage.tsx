@@ -14,6 +14,10 @@ interface Parcel {
   description: string
   ownerId: string
   createdAt: string
+  cropName: string
+  floweringStart: string | null
+  floweringEnd: string | null
+  cropNotes: string
 }
 
 interface ParcelForm {
@@ -34,6 +38,14 @@ const emptyForm: ParcelForm = {
   description: '',
 }
 
+const emptyCropForm = {
+  parcelId: '',
+  cropName: '',
+  floweringStart: '',
+  floweringEnd: '',
+  cropNotes: '',
+}
+
 const markerIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -45,6 +57,7 @@ const markerIcon = new L.Icon({
 function ParcelsPage() {
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [form, setForm] = useState<ParcelForm>(emptyForm)
+  const [cropForm, setCropForm] = useState(emptyCropForm)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -204,6 +217,66 @@ function ParcelsPage() {
     }
   }
 
+  const selectCropParcel = (parcel: Parcel) => {
+    setCropForm({
+      parcelId: parcel.id,
+      cropName: parcel.cropName ?? '',
+      floweringStart: parcel.floweringStart ? parcel.floweringStart.slice(0, 10) : '',
+      floweringEnd: parcel.floweringEnd ? parcel.floweringEnd.slice(0, 10) : '',
+      cropNotes: parcel.cropNotes ?? '',
+    })
+    setError('')
+    setSuccess('')
+  }
+
+  const handleCropSubmit = async () => {
+    if (!cropForm.parcelId) {
+      setError('Izaberite parcelu za evidenciju kulture.')
+      setSuccess('')
+      return
+    }
+
+    if (!cropForm.cropName.trim() || !cropForm.floweringStart || !cropForm.floweringEnd) {
+      setError('Naziv kulture i period cvetanja su obavezni.')
+      setSuccess('')
+      return
+    }
+
+    try {
+      await axios.put(
+        `http://localhost:5108/api/Parcels/${cropForm.parcelId}/crop`,
+        {
+          cropName: cropForm.cropName,
+          floweringStart: new Date(cropForm.floweringStart).toISOString(),
+          floweringEnd: new Date(cropForm.floweringEnd).toISOString(),
+          cropNotes: cropForm.cropNotes,
+        },
+        { headers },
+      )
+
+      setCropForm(emptyCropForm)
+      setSuccess('Kultura je uspesno evidentirana.')
+      await fetchParcels()
+    } catch (err) {
+      console.error('Greska pri cuvanju kulture:', err)
+      setError('Greska pri cuvanju kulture.')
+    }
+  }
+
+  const handleCropDelete = async (parcelId: string) => {
+    if (!confirm('Da li zelite da obrisete evidentiranu kulturu?')) return
+
+    try {
+      await axios.delete(`http://localhost:5108/api/Parcels/${parcelId}/crop`, { headers })
+      setCropForm(emptyCropForm)
+      setSuccess('Kultura je obrisana.')
+      await fetchParcels()
+    } catch (err) {
+      console.error('Greska pri brisanju kulture:', err)
+      setError('Greska pri brisanju kulture.')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
@@ -239,8 +312,9 @@ function ParcelsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
             <h2 className="text-white font-bold text-lg mb-4">
               {editingId ? 'Izmena parcele' : 'Nova parcela'}
             </h2>
@@ -342,7 +416,93 @@ function ParcelsPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <h2 className="text-white font-bold text-lg mb-4">Posejana kultura</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Parcela</label>
+                <select
+                  value={cropForm.parcelId}
+                  onChange={(event) => {
+                    const parcel = parcels.find((item) => item.id === event.target.value)
+                    if (parcel) selectCropParcel(parcel)
+                    else setCropForm(emptyCropForm)
+                  }}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                >
+                  <option value="">Izaberite parcelu</option>
+                  {parcels.map((parcel) => (
+                    <option key={parcel.id} value={parcel.id}>
+                      {parcel.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Kultura</label>
+                <input
+                  value={cropForm.cropName}
+                  onChange={(event) => setCropForm({ ...cropForm, cropName: event.target.value })}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                  placeholder="Suncokret, uljana repica, lavanda..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">Cvetanje od</label>
+                  <input
+                    type="date"
+                    value={cropForm.floweringStart}
+                    onChange={(event) => setCropForm({ ...cropForm, floweringStart: event.target.value })}
+                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">Cvetanje do</label>
+                  <input
+                    type="date"
+                    value={cropForm.floweringEnd}
+                    onChange={(event) => setCropForm({ ...cropForm, floweringEnd: event.target.value })}
+                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Napomena</label>
+                <textarea
+                  value={cropForm.cropNotes}
+                  onChange={(event) => setCropForm({ ...cropForm, cropNotes: event.target.value })}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500 min-h-24"
+                  placeholder="Dodatne informacije o kulturi"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCropSubmit}
+                  className="flex-1 bg-green-500 hover:bg-green-400 text-slate-950 font-bold py-3 rounded transition-colors"
+                >
+                  Sacuvaj kulturu
+                </button>
+                {cropForm.parcelId && (
+                  <button
+                    onClick={() => handleCropDelete(cropForm.parcelId)}
+                    className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded transition-colors"
+                  >
+                    Obrisi
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          </div>
+
+          <div className="space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <h2 className="text-white font-bold text-lg mb-4">Mapa parcela</h2>
 
@@ -394,6 +554,7 @@ function ParcelsPage() {
                         <th className="text-left text-slate-400 px-6 py-4 font-medium">Naziv</th>
                         <th className="text-left text-slate-400 px-6 py-4 font-medium">Lokacija</th>
                         <th className="text-left text-slate-400 px-6 py-4 font-medium">Površina</th>
+                        <th className="text-left text-slate-400 px-6 py-4 font-medium">Kultura</th>
                         <th className="text-left text-slate-400 px-6 py-4 font-medium">Koordinate</th>
                         <th className="text-left text-slate-400 px-6 py-4 font-medium">Akcije</th>
                       </tr>
@@ -409,6 +570,18 @@ function ParcelsPage() {
                           <td className="px-6 py-4 text-slate-300">{parcel.location}</td>
                           <td className="px-6 py-4 text-slate-300">{parcel.area}</td>
                           <td className="px-6 py-4 text-slate-300">
+                            {parcel.cropName ? (
+                              <div>
+                                <div className="text-green-300">{parcel.cropName}</div>
+                                <div className="text-xs text-slate-500">
+                                  {formatDate(parcel.floweringStart)} - {formatDate(parcel.floweringEnd)}
+                                </div>
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-slate-300">
                             {parcel.latitude}, {parcel.longitude}
                           </td>
                           <td className="px-6 py-4">
@@ -418,6 +591,13 @@ function ParcelsPage() {
                                 className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded transition-colors"
                               >
                                 Izmeni
+                              </button>
+
+                              <button
+                                onClick={() => selectCropParcel(parcel)}
+                                className="bg-green-600 hover:bg-green-500 text-white text-xs px-3 py-1 rounded transition-colors"
+                              >
+                                Kultura
                               </button>
 
                               <button
@@ -440,6 +620,11 @@ function ParcelsPage() {
       </div>
     </div>
   )
+}
+
+function formatDate(value: string | null) {
+  if (!value) return '-'
+  return new Date(value).toLocaleDateString('sr-RS')
 }
 
 export default ParcelsPage

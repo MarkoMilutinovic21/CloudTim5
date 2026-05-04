@@ -92,13 +92,15 @@ public class ApiaryRepository(IOptions<AzureTableOptions> options) : IApiaryRepo
 
     private static Apiary MapToDomain(ApiaryEntity entity)
     {
-        return Apiary.Create(
+        return Apiary.Rehydrate(
+            Guid.Parse(entity.RowKey),
             entity.Name,
             entity.Description,
             entity.Location,
             entity.Latitude,
             entity.Longitude,
-            Guid.Parse(entity.OwnerId));
+            Guid.Parse(entity.OwnerId),
+            entity.CreatedAt);
     }
 
     private static ApiaryEntity MapToEntity(Apiary apiary)

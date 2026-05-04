@@ -83,6 +83,26 @@ function DashboardPage() {
                 Pregled merenja pametne vage i osnovne analitike kosnice
               </p>
             </div>
+
+            <div
+              onClick={() => navigate('/beekeeper/crops')}
+              className="bg-slate-900 border border-slate-800 hover:border-green-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Posejane kulture</h3>
+              <p className="text-slate-400 text-sm">
+                Mapa kultura posejanih u blizini mojih pcelinjaka
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/beekeeper/journal')}
+              className="bg-slate-900 border border-slate-800 hover:border-sky-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Pcelarski dnevnik</h3>
+              <p className="text-slate-400 text-sm">
+                Belezenje i pregled obilazaka za izabranu kosnicu
+              </p>
+            </div>
           </div>
         )}
       </div>

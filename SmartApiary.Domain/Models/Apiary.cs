@@ -40,6 +40,29 @@ public class Apiary : AggregateRoot
         };
     }
 
+    public static Apiary Rehydrate(
+        Guid id,
+        string name,
+        string description,
+        string location,
+        double latitude,
+        double longitude,
+        Guid ownerId,
+        DateTime createdAt)
+    {
+        return new Apiary
+        {
+            Id = id,
+            Name = name,
+            Description = description,
+            Location = location,
+            Latitude = latitude,
+            Longitude = longitude,
+            OwnerId = ownerId,
+            CreatedAt = createdAt
+        };
+    }
+
     public void Update(string name, string description, string location, double latitude, double longitude)
     {
         Name = name;

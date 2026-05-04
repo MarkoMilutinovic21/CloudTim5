@@ -19,6 +19,8 @@ public class HiveRepository(IOptions<AzureTableOptions> options) : IHiveReposito
 
     public async Task<Hive?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+
         await foreach (var entity in _tableClient.QueryAsync<HiveEntity>(
             e => e.RowKey == id.ToString(), cancellationToken: ct))
         {
@@ -27,8 +29,23 @@ public class HiveRepository(IOptions<AzureTableOptions> options) : IHiveReposito
         return null;
     }
 
+    public async Task<IReadOnlyCollection<Hive>> GetAllAsync(CancellationToken ct = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+
+        var results = new List<Hive>();
+        await foreach (var entity in _tableClient.QueryAsync<HiveEntity>(cancellationToken: ct))
+        {
+            results.Add(MapToDomain(entity));
+        }
+
+        return results.AsReadOnly();
+    }
+
     public async Task<IReadOnlyCollection<Hive>> GetByApiaryIdAsync(Guid apiaryId, CancellationToken ct = default)
     {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+
         var results = new List<Hive>();
         await foreach (var entity in _tableClient.QueryAsync<HiveEntity>(
             e => e.PartitionKey == apiaryId.ToString(), cancellationToken: ct))
@@ -59,10 +76,12 @@ public class HiveRepository(IOptions<AzureTableOptions> options) : IHiveReposito
 
     private static Hive MapToDomain(HiveEntity entity)
     {
-        return Hive.Create(
+        return Hive.Rehydrate(
+            Guid.Parse(entity.RowKey),
             entity.Name,
             entity.Description,
-            Guid.Parse(entity.ApiaryId));
+            Guid.Parse(entity.ApiaryId),
+            entity.CreatedAt);
     }
 
     private static HiveEntity MapToEntity(Hive hive)

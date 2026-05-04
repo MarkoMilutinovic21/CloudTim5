@@ -43,6 +43,21 @@ public class ParcelRepository(IOptions<AzureTableOptions> options) : IParcelRepo
         return results.AsReadOnly();
     }
 
+    public async Task<IReadOnlyCollection<Parcel>> GetAllAsync(CancellationToken ct = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+
+        List<Parcel> results = new();
+
+        await foreach (ParcelEntity entity in _tableClient.QueryAsync<ParcelEntity>(
+            cancellationToken: ct))
+        {
+            results.Add(MapToDomain(entity));
+        }
+
+        return results.AsReadOnly();
+    }
+
     public async Task SaveAsync(Parcel parcel, CancellationToken ct = default)
     {
         await _tableClient.CreateIfNotExistsAsync(ct);
@@ -87,7 +102,11 @@ public class ParcelRepository(IOptions<AzureTableOptions> options) : IParcelRepo
             entity.Longitude,
             entity.Description,
             Guid.Parse(entity.OwnerId),
-            entity.CreatedAt);
+            entity.CreatedAt,
+            entity.CropName,
+            entity.FloweringStart,
+            entity.FloweringEnd,
+            entity.CropNotes);
     }
 
     private static ParcelEntity MapToEntity(Parcel parcel)
@@ -103,7 +122,11 @@ public class ParcelRepository(IOptions<AzureTableOptions> options) : IParcelRepo
             Longitude = parcel.Longitude,
             Description = parcel.Description,
             OwnerId = parcel.OwnerId.ToString(),
-            CreatedAt = parcel.CreatedAt
+            CreatedAt = parcel.CreatedAt,
+            CropName = parcel.CropName,
+            FloweringStart = parcel.FloweringStart,
+            FloweringEnd = parcel.FloweringEnd,
+            CropNotes = parcel.CropNotes
         };
     }
 }
