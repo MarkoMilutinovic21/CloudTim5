@@ -1,41 +1,82 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿namespace SmartApiary.Infrastructure.Services;
+
+using Microsoft.Extensions.Configuration;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using SmartApiary.Application.Common.Interfaces;
-using System.Net.Mail;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace SmartApiary.Infrastructure.Services
+public class EmailService : IEmailService
 {
-    public class EmailService : IEmailService
+    private readonly IConfiguration _configuration;
+
+    public EmailService(IConfiguration configuration)
     {
-        private readonly IConfiguration _configuration;
+        _configuration = configuration;
+    }
 
-        public EmailService(IConfiguration configuration)
+    public async Task SendActivationEmailAsync(string to, string token, CancellationToken ct = default)
+    {
+        string? apiKey = _configuration["SendGrid:ApiKey"];
+        string? fromEmail = _configuration["SendGrid:FromEmail"];
+        string? fromName = _configuration["SendGrid:FromName"];
+
+        if (string.IsNullOrWhiteSpace(apiKey) ||
+            string.IsNullOrWhiteSpace(fromEmail))
         {
-            _configuration = configuration;
+            return;
         }
 
-        public async Task SendActivationEmailAsync(string to, string token, CancellationToken ct = default)
+        SendGridClient client = new SendGridClient(apiKey);
+        EmailAddress from = new EmailAddress(fromEmail, fromName);
+        EmailAddress toAddress = new EmailAddress(to);
+
+        string subject = "Aktivacija naloga - Smart Apiary";
+        string activationLink = $"http://localhost:5173/activate?token={token}";
+
+        string plainTextContent = $"Molimo vas da aktivirate svoj nalog klikom na link: {activationLink}";
+        string htmlContent =
+            $"<strong>Molimo vas da aktivirate svoj nalog klikom na link:</strong> " +
+            $"<a href=\"{activationLink}\">Aktiviraj nalog</a>";
+
+        SendGridMessage msg = MailHelper.CreateSingleEmail(
+            from,
+            toAddress,
+            subject,
+            plainTextContent,
+            htmlContent);
+
+        await client.SendEmailAsync(msg, ct);
+    }
+
+    public async Task SendPesticideTreatmentNotificationAsync(
+        string to,
+        string subject,
+        string message,
+        CancellationToken ct = default)
+    {
+        string? apiKey = _configuration["SendGrid:ApiKey"];
+        string? fromEmail = _configuration["SendGrid:FromEmail"];
+        string? fromName = _configuration["SendGrid:FromName"];
+
+        if (string.IsNullOrWhiteSpace(apiKey) ||
+            string.IsNullOrWhiteSpace(fromEmail))
         {
-            var apiKey = _configuration["SendGrid:ApiKey"];
-            var fromEmail = _configuration["SendGrid:FromEmail"];
-            var fromName = _configuration["SendGrid:FromName"];
-
-            var client = new SendGridClient(apiKey);
-            var from = new EmailAddress(fromEmail, fromName);
-            var toAddress = new EmailAddress(to);
-            var subject = "Aktivacija naloga - Smart Apiary";
-
-            var activationLink = $"http://localhost:5173/activate?token={token}";
-
-            var plainTextContent = $"Molimo vas da aktivirate svoj nalog klikom na link: {activationLink}";
-            var htmlContent = $"<strong>Molimo vas da aktivirate svoj nalog klikom na link:</strong> <a href=\"{activationLink}\">Aktiviraj nalog</a>";
-
-            var msg = MailHelper.CreateSingleEmail(from, toAddress, subject, plainTextContent, htmlContent);
-
-            await client.SendEmailAsync(msg, ct);
+            return;
         }
+
+        SendGridClient client = new SendGridClient(apiKey);
+        EmailAddress from = new EmailAddress(fromEmail, fromName);
+        EmailAddress toAddress = new EmailAddress(to);
+
+        string htmlContent = message.Replace(Environment.NewLine, "<br />");
+
+        SendGridMessage msg = MailHelper.CreateSingleEmail(
+            from,
+            toAddress,
+            subject,
+            message,
+            htmlContent);
+
+        await client.SendEmailAsync(msg, ct);
     }
 }
