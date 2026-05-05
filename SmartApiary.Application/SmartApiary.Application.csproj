@@ -17,8 +17,4 @@
     <ProjectReference Include="..\SmartApiary.Domain\SmartApiary.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\Crops\Queries\" />
-  </ItemGroup>
-
 </Project>
