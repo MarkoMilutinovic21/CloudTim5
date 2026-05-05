@@ -81,6 +81,7 @@ public static class PesticideTreatmentNotificationHelper
         return
             "Poštovani," + Environment.NewLine +
             Environment.NewLine +
+            "Vaš pčelinjak je pod rizikom." + Environment.NewLine +
             "Najavljeno je tretiranje pesticidima u blizini vašeg pčelinjaka." + Environment.NewLine +
             $"Parcela: {parcel.Name}" + Environment.NewLine +
             $"Lokacija: {parcel.Location}" + Environment.NewLine +
@@ -100,6 +101,7 @@ public static class PesticideTreatmentNotificationHelper
         return
             "Poštovani," + Environment.NewLine +
             Environment.NewLine +
+            "Vaš pčelinjak je pod rizikom." + Environment.NewLine +
             "Izmenjena je najava tretiranja pesticidima u blizini vašeg pčelinjaka." + Environment.NewLine +
             $"Parcela: {parcel.Name}" + Environment.NewLine +
             $"Lokacija: {parcel.Location}" + Environment.NewLine +

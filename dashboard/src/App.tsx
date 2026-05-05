@@ -10,6 +10,7 @@ import TelemetryPage from './pages/TelemetryPage'
 import NotificationStatusPage from './pages/NotificationStatusPage'
 import NearbyCropsPage from './pages/NearbyCropsPage'
 import HiveJournalPage from './pages/HiveJournalPage'
+import AlertsPage from './pages/AlertsPage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -47,6 +48,10 @@ function App() {
         <Route
           path="/beekeeper/journal"
           element={token ? <HiveJournalPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/beekeeper/alerts"
+          element={token ? <AlertsPage /> : <Navigate to="/login" />}
         />
         <Route path="/activate" element={<ActivatePage />} />
       </Routes>

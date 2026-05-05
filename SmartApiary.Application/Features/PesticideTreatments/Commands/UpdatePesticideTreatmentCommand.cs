@@ -3,6 +3,7 @@
 using FluentValidation;
 using MediatR;
 using SmartApiary.Application.Common.Interfaces;
+using SmartApiary.Application.Features.Alerts;
 using SmartApiary.Application.Features.PesticideTreatments;
 using SmartApiary.Domain.Models;
 
@@ -47,6 +48,7 @@ public class UpdatePesticideTreatmentCommandHandler(
     IParcelRepository parcelRepository,
     IApiaryRepository apiaryRepository,
     IUserRepository userRepository,
+    IBeekeeperAlertRepository alertRepository,
     IEmailService emailService)
     : IRequestHandler<UpdatePesticideTreatmentCommand, UpdatePesticideTreatmentResult>
 {
@@ -94,9 +96,11 @@ public class UpdatePesticideTreatmentCommandHandler(
             request.DurationHours,
             pesticideType);
 
-        int notifiedCount = await PesticideTreatmentNotificationHelper.TryNotifyBeekeepersAsync(
+        int notifiedCount = await BeekeeperAlertHelper.CreateAlertsAsync(
             nearbyBeekeepers,
+            alertRepository,
             emailService,
+            BeekeeperAlertTypes.PesticideTreatment,
             "Izmena najave tretiranja pesticidima - Smart Apiary",
             message,
             ct);

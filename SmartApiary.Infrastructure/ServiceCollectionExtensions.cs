@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPesticideTreatmentRepository, PesticideTreatmentRepository>();
         services.AddScoped<IDeviceRepository, DeviceRepository>();
         services.AddScoped<ITelemetryMeasurementRepository, TelemetryMeasurementRepository>();
+        services.AddScoped<IBeekeeperAlertRepository, BeekeeperAlertRepository>();
 
         services.AddScoped<IEmailService, EmailService>();
 

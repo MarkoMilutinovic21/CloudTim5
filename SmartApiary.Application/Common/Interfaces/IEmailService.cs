@@ -9,4 +9,10 @@ public interface IEmailService
         string subject,
         string message,
         CancellationToken ct = default);
+
+    Task SendBeekeeperAlertAsync(
+        string to,
+        string subject,
+        string message,
+        CancellationToken ct = default);
 }

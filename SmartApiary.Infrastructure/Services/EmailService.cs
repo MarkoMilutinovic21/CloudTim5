@@ -54,6 +54,24 @@ public class EmailService : IEmailService
         string message,
         CancellationToken ct = default)
     {
+        await SendEmailAsync(to, subject, message, ct);
+    }
+
+    public async Task SendBeekeeperAlertAsync(
+        string to,
+        string subject,
+        string message,
+        CancellationToken ct = default)
+    {
+        await SendEmailAsync(to, subject, message, ct);
+    }
+
+    private async Task SendEmailAsync(
+        string to,
+        string subject,
+        string message,
+        CancellationToken ct)
+    {
         string? apiKey = _configuration["SendGrid:ApiKey"];
         string? fromEmail = _configuration["SendGrid:FromEmail"];
         string? fromName = _configuration["SendGrid:FromName"];

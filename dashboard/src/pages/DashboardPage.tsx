@@ -115,6 +115,16 @@ function DashboardPage() {
                 Belezenje i pregled obilazaka za izabranu kosnicu
               </p>
             </div>
+
+            <div
+              onClick={() => navigate('/beekeeper/alerts')}
+              className="bg-slate-900 border border-slate-800 hover:border-red-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Hitna upozorenja</h3>
+              <p className="text-slate-400 text-sm">
+                Pregled rizika za pcelinjak i kosnice
+              </p>
+            </div>
           </div>
         )}
       </div>
