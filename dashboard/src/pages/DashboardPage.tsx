@@ -69,6 +69,18 @@ function DashboardPage() {
                 Zakazivanje, pomeranje i otkazivanje tretiranja parcela
               </p>
             </div>
+
+            <div
+              onClick={() => navigate('/farmer/notification-status')}
+              className="bg-slate-900 border border-slate-800 hover:border-blue-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">
+                Status obavestenja
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Pregled broja pcelara obavestenih za svaku najavu prskanja
+              </p>
+            </div>
           </div>
         )}
 
@@ -81,6 +93,26 @@ function DashboardPage() {
               <h3 className="text-white font-bold text-lg mb-1">Telemetrija</h3>
               <p className="text-slate-400 text-sm">
                 Pregled merenja pametne vage i osnovne analitike kosnice
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/beekeeper/crops')}
+              className="bg-slate-900 border border-slate-800 hover:border-green-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Posejane kulture</h3>
+              <p className="text-slate-400 text-sm">
+                Mapa kultura posejanih u blizini mojih pcelinjaka
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/beekeeper/journal')}
+              className="bg-slate-900 border border-slate-800 hover:border-sky-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Pcelarski dnevnik</h3>
+              <p className="text-slate-400 text-sm">
+                Belezenje i pregled obilazaka za izabranu kosnicu
               </p>
             </div>
           </div>

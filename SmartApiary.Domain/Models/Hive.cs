@@ -31,6 +31,23 @@ public class Hive : AggregateRoot
         };
     }
 
+    public static Hive Rehydrate(
+        Guid id,
+        string name,
+        string description,
+        Guid apiaryId,
+        DateTime createdAt)
+    {
+        return new Hive
+        {
+            Id = id,
+            Name = name,
+            Description = description,
+            ApiaryId = apiaryId,
+            CreatedAt = createdAt
+        };
+    }
+
     public void Update(string name, string description)
     {
         Name = name;

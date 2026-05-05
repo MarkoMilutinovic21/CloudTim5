@@ -68,6 +68,31 @@ public class ParcelsController(IMediator mediator) : ControllerBase
 
         return Ok(new { message = "Parcela uspešno obrisana." });
     }
+
+    [HttpPut("{id}/crop")]
+    public async Task<IActionResult> SetCrop(
+        Guid id,
+        [FromBody] SetParcelCropRequest request,
+        CancellationToken ct)
+    {
+        await mediator.Send(new SetParcelCropCommand(
+            id,
+            request.CropName,
+            request.FloweringStart,
+            request.FloweringEnd,
+            request.CropNotes,
+            GetUserId()), ct);
+
+        return Ok(new { message = "Kultura je uspešno evidentirana." });
+    }
+
+    [HttpDelete("{id}/crop")]
+    public async Task<IActionResult> ClearCrop(Guid id, CancellationToken ct)
+    {
+        await mediator.Send(new ClearParcelCropCommand(id, GetUserId()), ct);
+
+        return Ok(new { message = "Kultura je uspešno obrisana." });
+    }
 }
 
 public record CreateParcelRequest(
@@ -85,3 +110,9 @@ public record UpdateParcelRequest(
     double Latitude,
     double Longitude,
     string Description);
+
+public record SetParcelCropRequest(
+    string CropName,
+    DateTime FloweringStart,
+    DateTime FloweringEnd,
+    string CropNotes);

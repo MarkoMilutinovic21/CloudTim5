@@ -14,7 +14,11 @@ public record ParcelDto(
     double Longitude,
     string Description,
     Guid OwnerId,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string CropName,
+    DateTime? FloweringStart,
+    DateTime? FloweringEnd,
+    string CropNotes);
 
 public class GetParcelsQueryHandler(
     IParcelRepository parcelRepository) : IRequestHandler<GetParcelsQuery, IReadOnlyCollection<ParcelDto>>
@@ -32,7 +36,11 @@ public class GetParcelsQueryHandler(
                 parcel.Longitude,
                 parcel.Description,
                 parcel.OwnerId,
-                parcel.CreatedAt))
+                parcel.CreatedAt,
+                parcel.CropName,
+                parcel.FloweringStart,
+                parcel.FloweringEnd,
+                parcel.CropNotes))
             .ToList()
             .AsReadOnly();
     }

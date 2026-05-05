@@ -10,4 +10,8 @@ public class ParcelEntity : BaseTableEntity
     public string Description { get; set; } = string.Empty;
     public string OwnerId { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public string CropName { get; set; } = string.Empty;
+    public DateTime? FloweringStart { get; set; }
+    public DateTime? FloweringEnd { get; set; }
+    public string CropNotes { get; set; } = string.Empty;
 }

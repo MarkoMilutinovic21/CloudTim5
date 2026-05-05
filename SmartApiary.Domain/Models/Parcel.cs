@@ -12,6 +12,10 @@ public class Parcel : AggregateRoot
     public string Description { get; private set; }
     public Guid OwnerId { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public string CropName { get; private set; } = string.Empty;
+    public DateTime? FloweringStart { get; private set; }
+    public DateTime? FloweringEnd { get; private set; }
+    public string CropNotes { get; private set; } = string.Empty;
 
     private Parcel() { }
 
@@ -46,7 +50,11 @@ public class Parcel : AggregateRoot
         double longitude,
         string description,
         Guid ownerId,
-        DateTime createdAt)
+        DateTime createdAt,
+        string cropName = "",
+        DateTime? floweringStart = null,
+        DateTime? floweringEnd = null,
+        string cropNotes = "")
     {
         return new Parcel
         {
@@ -58,7 +66,11 @@ public class Parcel : AggregateRoot
             Longitude = longitude,
             Description = description,
             OwnerId = ownerId,
-            CreatedAt = createdAt
+            CreatedAt = createdAt,
+            CropName = cropName,
+            FloweringStart = floweringStart,
+            FloweringEnd = floweringEnd,
+            CropNotes = cropNotes
         };
     }
 
@@ -76,5 +88,25 @@ public class Parcel : AggregateRoot
         Latitude = latitude;
         Longitude = longitude;
         Description = description;
+    }
+
+    public void SetCrop(
+        string cropName,
+        DateTime floweringStart,
+        DateTime floweringEnd,
+        string cropNotes)
+    {
+        CropName = cropName;
+        FloweringStart = floweringStart;
+        FloweringEnd = floweringEnd;
+        CropNotes = cropNotes;
+    }
+
+    public void ClearCrop()
+    {
+        CropName = string.Empty;
+        FloweringStart = null;
+        FloweringEnd = null;
+        CropNotes = string.Empty;
     }
 }

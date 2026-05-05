@@ -16,7 +16,9 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(
+                configuration.GetConnectionString("DefaultConnection"),
+                sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddSingleton<IJwtService, JwtService>();
@@ -29,12 +31,15 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IApiaryRepository, ApiaryRepository>();
         services.AddScoped<IHiveRepository, HiveRepository>();
+        services.AddScoped<IHiveJournalEntryRepository, HiveJournalEntryRepository>();
         services.AddScoped<IParcelRepository, ParcelRepository>();
         services.AddScoped<IPesticideTreatmentRepository, PesticideTreatmentRepository>();
         services.AddScoped<IDeviceRepository, DeviceRepository>();
         services.AddScoped<ITelemetryMeasurementRepository, TelemetryMeasurementRepository>();
 
         services.AddScoped<IEmailService, EmailService>();
+
+        services.AddScoped<ICropRepository, CropRepository>();
 
         return services;
     }

@@ -10,6 +10,7 @@ using SmartApiary.Domain.Models;
 using SmartApiary.Domain.Common;
 using SmartApiary.Infrastructure.Persistence;
 using Microsoft.OpenApi;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,6 +91,8 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await context.Database.MigrateAsync();
+
     if (!context.Users.Any(u => u.Email == "admin@smartapiary.com"))
     {
         var admin = User.Create(
