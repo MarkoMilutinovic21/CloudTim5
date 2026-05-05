@@ -364,3 +364,9 @@ FodyWeavers.xsd
 
 # Smart Apiary local dev launcher state
 .devstack/
+
+# Azurite local emulator state
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+azurite*.log

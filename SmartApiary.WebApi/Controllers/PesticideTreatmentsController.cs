@@ -24,6 +24,15 @@ public class PesticideTreatmentsController(IMediator mediator) : ControllerBase
         return Ok(treatments);
     }
 
+    [HttpGet("notification-status")]
+    public async Task<IActionResult> GetNotificationStatus(CancellationToken ct)
+    {
+        PesticideTreatmentNotificationStatusOverviewDto overview =
+            await mediator.Send(new GetPesticideTreatmentNotificationStatusesQuery(GetUserId()), ct);
+
+        return Ok(overview);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateTreatment(
         [FromBody] CreatePesticideTreatmentRequest request,
