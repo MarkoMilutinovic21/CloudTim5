@@ -41,6 +41,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailService, EmailService>();
 
         services.AddScoped<ICropRepository, CropRepository>();
+        services.AddScoped<ISprayingRecordRepository, SprayingRecordRepository>();
 
         return services;
     }
