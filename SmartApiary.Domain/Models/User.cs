@@ -14,6 +14,8 @@ public class User : AggregateRoot
     public DateTime CreatedAt { get; private set; }
     public string? ActivationToken { get; private set; }
     public DateTime? ActivationTokenExpiry { get; private set; }
+    public string? ResetPasswordToken { get; private set; }
+    public DateTime? ResetPasswordTokenExpiry { get; private set; }
 
     private User() { }
 
@@ -52,6 +54,22 @@ public class User : AggregateRoot
         ActivationTokenExpiry = null;
     }
 
+    public void SetResetPasswordToken()
+    {
+        ResetPasswordToken = Guid.NewGuid().ToString("N");
+        ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(1);
+    }
+
+    public void ResetPassword(string passwordHash)
+    {
+        PasswordHash = passwordHash;
+        ResetPasswordToken = null;
+        ResetPasswordTokenExpiry = null;
+    }
+
     public bool IsActivationTokenValid(string token) =>
         ActivationToken == token && ActivationTokenExpiry > DateTime.UtcNow;
+
+    public bool IsResetPasswordTokenValid(string token) =>
+        ResetPasswordToken == token && ResetPasswordTokenExpiry > DateTime.UtcNow;
 }

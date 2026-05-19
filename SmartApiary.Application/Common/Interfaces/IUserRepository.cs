@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SmartApiary.Application.Common.Interfaces;
+﻿namespace SmartApiary.Application.Common.Interfaces;
 
 using SmartApiary.Domain.Models;
 
@@ -17,4 +11,5 @@ public interface IUserRepository
     Task UpdateAsync(User user, CancellationToken ct = default);
     Task DeleteAsync(User user, CancellationToken ct = default);
     Task<User?> GetByActivationTokenAsync(string token, CancellationToken ct = default);
+    Task<User?> GetByResetPasswordTokenAsync(string token, CancellationToken ct = default);
 }

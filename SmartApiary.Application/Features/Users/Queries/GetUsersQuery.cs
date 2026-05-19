@@ -14,7 +14,8 @@ public record UserDto(
     string Role,
     bool IsActive,
     DateTime CreatedAt,
-    string? ActivationToken);
+    string? ActivationToken,
+    string? ResetPasswordToken);
 
 public class GetUsersQueryHandler(
     IUserRepository userRepository) : IRequestHandler<GetUsersQuery, IReadOnlyCollection<UserDto>>
@@ -25,7 +26,7 @@ public class GetUsersQueryHandler(
         return users.Select(u => new UserDto(
             u.Id, u.FirstName, u.LastName, u.Email,
             u.Phone, u.Role, u.IsActive, u.CreatedAt,
-            u.ActivationToken))
+            u.ActivationToken, u.ResetPasswordToken))
             .ToList()
             .AsReadOnly();
     }

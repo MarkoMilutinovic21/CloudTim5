@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 function LoginPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -55,7 +57,7 @@ function LoginPage() {
           />
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="block text-slate-400 text-sm mb-2">Lozinka</label>
           <input
             type="password"
@@ -65,6 +67,15 @@ function LoginPage() {
             placeholder="••••••••"
             onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
           />
+        </div>
+
+        <div className="mb-6 text-right">
+          <button
+            onClick={() => navigate('/forgot-password')}
+            className="text-yellow-500 hover:text-yellow-400 text-sm transition-colors"
+          >
+            Zaboravili ste lozinku?
+          </button>
         </div>
 
         <button

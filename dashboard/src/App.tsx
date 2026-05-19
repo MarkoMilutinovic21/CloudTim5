@@ -4,6 +4,8 @@ import DashboardPage from './pages/DashboardPage'
 import CreateUserPage from './pages/CreateUserPage'
 import UsersPage from './pages/UsersPage'
 import ActivatePage from './pages/ActivatePage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import ParcelsPage from './pages/ParcelsPage'
 import PesticideTreatmentsPage from './pages/PesticideTreatmentsPage'
 import TelemetryPage from './pages/TelemetryPage'
@@ -19,12 +21,15 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/activate" element={<ActivatePage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/admin/create-user" element={<CreateUserPage />} />
+        <Route path="/admin/users" element={<UsersPage />} />
         <Route
           path="/"
           element={token ? <DashboardPage /> : <Navigate to="/login" />}
         />
-        <Route path="/admin/users" element={<UsersPage />} />
         <Route
           path="/farmer/parcels"
           element={token ? <ParcelsPage /> : <Navigate to="/login" />}
@@ -53,7 +58,6 @@ function App() {
           path="/beekeeper/alerts"
           element={token ? <AlertsPage /> : <Navigate to="/login" />}
         />
-        <Route path="/activate" element={<ActivatePage />} />
       </Routes>
     </BrowserRouter>
   )

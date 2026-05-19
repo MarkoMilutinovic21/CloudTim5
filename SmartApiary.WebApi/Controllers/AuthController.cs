@@ -29,4 +29,25 @@ public class AuthController(IMediator mediator) : ControllerBase
         await mediator.Send(command, ct);
         return Ok(new { message = "Nalog je uspešno aktiviran. Možete se prijaviti." });
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken ct)
+    {
+        await mediator.Send(command, ct);
+        return Ok(new { message = "Ukoliko nalog postoji, poslaćemo email sa linkom za resetovanje." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken ct)
+    {
+        try
+        {
+            await mediator.Send(command, ct);
+            return Ok(new { message = "Lozinka je uspešno promenjena. Možete se prijaviti." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

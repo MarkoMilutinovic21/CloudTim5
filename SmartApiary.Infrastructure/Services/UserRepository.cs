@@ -14,8 +14,12 @@ public class UserRepository(AppDbContext context) : IUserRepository
 
     public async Task<IReadOnlyCollection<User>> GetAllAsync(CancellationToken ct = default)
         => await context.Users.ToListAsync(ct);
+
     public async Task<User?> GetByActivationTokenAsync(string token, CancellationToken ct = default)
         => await context.Users.FirstOrDefaultAsync(u => u.ActivationToken == token, ct);
+
+    public async Task<User?> GetByResetPasswordTokenAsync(string token, CancellationToken ct = default)
+        => await context.Users.FirstOrDefaultAsync(u => u.ResetPasswordToken == token, ct);
 
     public async Task SaveAsync(User user, CancellationToken ct = default)
     {
@@ -34,5 +38,4 @@ public class UserRepository(AppDbContext context) : IUserRepository
         context.Users.Remove(user);
         await context.SaveChangesAsync(ct);
     }
-
 }
