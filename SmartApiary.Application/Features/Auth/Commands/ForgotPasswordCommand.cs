@@ -6,7 +6,8 @@ using SmartApiary.Application.Common.Interfaces;
 public record ForgotPasswordCommand(string Email) : IRequest;
 
 public class ForgotPasswordCommandHandler(
-    IUserRepository userRepository) : IRequestHandler<ForgotPasswordCommand>
+    IUserRepository userRepository, IEmailService emailService) : IRequestHandler<ForgotPasswordCommand>
+
 {
     public async Task Handle(ForgotPasswordCommand request, CancellationToken ct)
     {
@@ -16,7 +17,12 @@ public class ForgotPasswordCommandHandler(
         user.SetResetPasswordToken();
         await userRepository.UpdateAsync(user, ct);
 
-        // TODO (Nemanja): Poslati email sa linkom
-        // Link format: http://localhost:5173/reset-password?token={user.ResetPasswordToken}
+        const string subject = "Resetovanje lozinke - Smart Apiary";
+
+        await emailService.SendPasswordResetLinkAsync(
+            user.Email,
+            subject,
+            user.ResetPasswordToken!,
+            ct);
     }
 }

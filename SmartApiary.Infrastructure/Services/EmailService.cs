@@ -97,4 +97,39 @@ public class EmailService : IEmailService
 
         await client.SendEmailAsync(msg, ct);
     }
+
+    public async Task SendPasswordResetLinkAsync(
+     string to,
+     string subject,
+     string message,
+     CancellationToken ct = default)
+    {
+        string? apiKey = _configuration["SendGrid:ApiKey"];
+        string? fromEmail = _configuration["SendGrid:FromEmail"];
+        string? fromName = _configuration["SendGrid:FromName"];
+
+        if (string.IsNullOrWhiteSpace(apiKey) ||
+            string.IsNullOrWhiteSpace(fromEmail))
+        {
+            return;
+        }
+
+        SendGridClient client = new SendGridClient(apiKey);
+        EmailAddress from = new EmailAddress(fromEmail, fromName);
+        EmailAddress toAddress = new EmailAddress(to);
+
+        string resetLink = $"http://localhost:5173/reset-password?token={message}";
+
+        string plainTextContent = resetLink;
+        string htmlContent = $"<a href=\"{resetLink}\">{resetLink}</a>";
+
+        SendGridMessage msg = MailHelper.CreateSingleEmail(
+            from,
+            toAddress,
+            subject,
+            plainTextContent,
+            htmlContent);
+
+        await client.SendEmailAsync(msg, ct);
+    }
 }

@@ -15,4 +15,10 @@ public interface IEmailService
         string subject,
         string message,
         CancellationToken ct = default);
+
+    Task SendPasswordResetLinkAsync(
+        string to,
+        string subject,
+        string message,
+        CancellationToken ct = default);
 }
