@@ -29,9 +29,14 @@ builder.Services.Configure<AzureQueueOptions>(
 builder.Services.Configure<AzureTableOptions>(
     builder.Configuration.GetSection(nameof(AzureTableOptions)));
 
+// Pokušaj oba na?ina u?itavanja - ako je jedan null, iskoristi drugi.
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? builder.Configuration["ConnectionStrings:DefaultConnection"] 
+    ?? Environment.GetEnvironmentVariable("ConnectionStrings:DefaultConnection");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        connectionString,
         sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
