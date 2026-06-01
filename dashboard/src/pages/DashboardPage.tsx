@@ -81,6 +81,30 @@ function DashboardPage() {
                 Pregled broja pcelara obavestenih za svaku najavu prskanja
               </p>
             </div>
+
+            <div
+              onClick={() => navigate('/farmer/spraying-records')}
+              className="bg-slate-900 border border-slate-800 hover:border-red-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">
+                Digitalni karton prskanja
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Evidencija izvršenih prskanja i korišćenih preparata
+              </p>
+            </div>
+            <div
+              onClick={() => navigate('/farmer/crops')}
+              className="bg-slate-900 border border-slate-800 hover:border-purple-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">
+                Evidencija posejanih kultura
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Pregled i unos kultura po parcelama
+              </p>
+            </div>
+
           </div>
         )}
 
