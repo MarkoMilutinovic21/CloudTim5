@@ -1,1 +1,70 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --app-bg: #101a12;
+  --app-bg-deep: #0b120d;
+  --app-surface: #203422;
+  --app-surface-strong: #263a27;
+  --app-border: #2f4731;
+  --app-border-strong: #3a553c;
+  --app-text: #ecf3e6;
+  --app-muted: #a3b39b;
+  --app-muted-2: #7f9283;
+  --app-text-strong: #c8d5bf;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+
+.app-shell {
+  background-color: var(--app-bg);
+  background-image:
+    radial-gradient(circle at 12% 10%, rgba(84, 140, 90, 0.18), transparent 38%),
+    radial-gradient(circle at 85% 85%, rgba(84, 140, 90, 0.12), transparent 42%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='56' viewBox='0 0 64 56' fill='none' stroke='%232f4f2f' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M16 1 L48 1 L63 28 L48 55 L16 55 L1 28 Z'/%3E%3C/svg%3E");
+  background-size: auto, auto, 64px 56px;
+  background-attachment: fixed;
+}
+
+.bg-slate-950 {
+  background-color: var(--app-bg-deep);
+}
+
+.bg-slate-900 {
+  background-color: var(--app-surface);
+}
+
+.bg-slate-800 {
+  background-color: var(--app-surface-strong);
+}
+
+.bg-slate-700 {
+  background-color: #304632;
+}
+
+.border-slate-800 {
+  border-color: var(--app-border);
+}
+
+.border-slate-700 {
+  border-color: var(--app-border-strong);
+}
+
+.text-slate-500 {
+  color: var(--app-muted-2);
+}
+
+.text-slate-400 {
+  color: var(--app-muted);
+}
+
+.text-slate-300 {
+  color: var(--app-text-strong);
+}
+
+.text-slate-950 {
+  color: #1a241c;
+}

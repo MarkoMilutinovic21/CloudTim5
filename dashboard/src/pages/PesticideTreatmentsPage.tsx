@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 interface Parcel {
   id: string
@@ -236,27 +237,26 @@ function PesticideTreatmentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+      <div className="min-h-screen app-shell flex items-center justify-center text-white">
         Učitavanje najava tretiranja...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8">
+    <div className="min-h-screen app-shell p-8">
       <div className="max-w-[1500px] mx-auto">
-        <div className="mb-6">
-          <a href="/" className="text-slate-400 hover:text-yellow-400 text-sm">
-            ← Nazad na dashboard
-          </a>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mt-2">
+              Najave tretiranja pesticidima
+            </h1>
 
-          <h1 className="text-3xl font-bold text-white mt-2">
-            Najave tretiranja pesticidima
-          </h1>
-
-          <p className="text-slate-400 text-sm mt-1">
-            Kreiranje, pomeranje i otkazivanje najava prskanja za vaše parcele.
-          </p>
+            <p className="text-slate-400 text-sm mt-1">
+              Kreiranje, pomeranje i otkazivanje najava prskanja za vaše parcele.
+            </p>
+          </div>
+          <ReturnToDashboardButton />
         </div>
 
         {error && (

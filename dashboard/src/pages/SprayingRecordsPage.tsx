@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 interface Parcel {
   id: string
@@ -91,7 +92,7 @@ useEffect(() => {
 
   if (loading) {
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+    <div className="min-h-screen app-shell flex items-center justify-center text-white">
       Učitavanje...
     </div>
   )
@@ -133,15 +134,14 @@ const createRecord = async () => {
   }
 }
 return (
-  <div className="min-h-screen bg-slate-950 p-8">
+  <div className="min-h-screen app-shell p-8">
     <div className="max-w-7xl mx-auto">
-      <a href="/" className="text-slate-400 hover:text-yellow-400 text-sm">
-        ← Nazad na dashboard
-      </a>
-
-      <h1 className="text-3xl font-bold text-white mt-2">
-        Digitalni karton prskanja
-      </h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <h1 className="text-3xl font-bold text-white mt-2">
+          Digitalni karton prskanja
+        </h1>
+        <ReturnToDashboardButton />
+      </div>
 
       <div className="mt-6">
   <label className="block text-white mb-2">

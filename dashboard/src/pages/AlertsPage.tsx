@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 interface BeekeeperAlert {
   id: string
@@ -72,24 +73,23 @@ function AlertsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+      <div className="min-h-screen app-shell flex items-center justify-center text-white">
         Ucitavanje upozorenja...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8">
+    <div className="min-h-screen app-shell p-8">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <a href="/" className="text-slate-400 hover:text-yellow-400 text-sm">
-            Nazad na dashboard
-          </a>
-
-          <h1 className="text-3xl font-bold text-white mt-2">Hitna upozorenja</h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Pregled rizika za pcelinjak i kosnice na osnovu telemetrije i najava tretiranja.
-          </p>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mt-2">Hitna upozorenja</h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Pregled rizika za pcelinjak i kosnice na osnovu telemetrije i najava tretiranja.
+            </p>
+          </div>
+          <ReturnToDashboardButton />
         </div>
 
         {error && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 interface User {
   id: string
@@ -56,23 +57,26 @@ function UsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+      <div className="min-h-screen app-shell flex items-center justify-center text-white">
         Učitavanje...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8">
+    <div className="min-h-screen app-shell p-8">
       <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">Upravljanje korisnicima</h1>
-          <a
-            href="/admin/create-user"
-            className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-4 py-2 rounded transition-colors"
-          >
-            + Novi korisnik
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <ReturnToDashboardButton />
+            <a
+              href="/admin/create-user"
+              className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-4 py-2 rounded transition-colors"
+            >
+              + Novi korisnik
+            </a>
+          </div>
         </div>
 
         {error && (

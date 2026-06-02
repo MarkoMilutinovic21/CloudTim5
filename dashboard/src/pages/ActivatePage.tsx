@@ -49,7 +49,7 @@ function ActivatePage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen app-shell flex items-center justify-center">
         <div className="bg-slate-900 p-8 rounded-xl shadow-xl w-full max-w-md">
           <p className="text-red-400 text-center">Link za aktivaciju nije validan.</p>
         </div>
@@ -58,7 +58,7 @@ function ActivatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen app-shell flex items-center justify-center">
       <div className="bg-slate-900 p-8 rounded-xl shadow-xl w-full max-w-md">
         <h1 className="text-2xl font-bold text-white mb-2">Aktivacija naloga</h1>
         <p className="text-slate-400 text-sm mb-6">Unesite lozinku za vaš novi nalog.</p>

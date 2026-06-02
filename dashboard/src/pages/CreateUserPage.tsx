@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 const ROLES = ['Beekeeper', 'Farmer']
 
@@ -70,7 +71,10 @@ function CreateUserPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen app-shell relative flex items-center justify-center">
+      <div className="absolute right-8 top-6">
+        <ReturnToDashboardButton />
+      </div>
       <div className="bg-slate-900 p-8 rounded-xl shadow-xl w-full max-w-md">
         <h1 className="text-2xl font-bold text-white mb-6">Kreiranje korisnika</h1>
 

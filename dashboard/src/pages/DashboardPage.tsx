@@ -11,9 +11,9 @@ function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen app-shell">
       <nav className="bg-slate-900 border-b border-slate-800 px-8 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+        <h1 className="text-xl font-black text-amber-400">
           Smart Apiary
         </h1>
         <div className="flex items-center gap-4">

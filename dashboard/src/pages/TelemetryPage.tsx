@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 interface TelemetryMeasurement {
   id: string
@@ -103,18 +104,16 @@ function TelemetryPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8">
+    <div className="min-h-screen app-shell p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
           <div>
-            <a href="/" className="text-slate-400 hover:text-yellow-400 text-sm">
-              &larr; Nazad na dashboard
-            </a>
             <h1 className="text-2xl font-bold text-white mt-2">Telemetrija kosnice</h1>
             <p className="text-slate-400 text-sm">
               Pregled merenja pametne vage i dnevnog unosa/potrosnje.
             </p>
           </div>
+          <ReturnToDashboardButton />
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">

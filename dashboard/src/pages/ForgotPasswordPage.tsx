@@ -27,7 +27,7 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen app-shell flex items-center justify-center">
       <div className="bg-slate-900 p-8 rounded-xl shadow-xl w-full max-w-md">
         <h1 className="text-2xl font-bold text-white mb-2">Zaboravljena lozinka</h1>
         <p className="text-slate-400 text-sm mb-6">Unesite vaš email i poslaćemo vam link za resetovanje.</p>

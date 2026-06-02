@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 interface JournalEntry {
   id: string
@@ -170,14 +171,14 @@ function HiveJournalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8">
+    <div className="min-h-screen app-shell p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <a href="/" className="text-slate-400 hover:text-yellow-400 text-sm">
-            &larr; Nazad na dashboard
-          </a>
-          <h1 className="text-2xl font-bold text-white mt-2">Pcelarski dnevnik</h1>
-          <p className="text-slate-400 text-sm">Zapisi fizickih pregleda za izabranu kosnicu.</p>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white mt-2">Pcelarski dnevnik</h1>
+            <p className="text-slate-400 text-sm">Zapisi fizickih pregleda za izabranu kosnicu.</p>
+          </div>
+          <ReturnToDashboardButton />
         </div>
 
         {error && (

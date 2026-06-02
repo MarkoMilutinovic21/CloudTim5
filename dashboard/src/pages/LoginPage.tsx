@@ -33,9 +33,9 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen app-shell flex items-center justify-center">
       <div className="bg-slate-900 p-8 rounded-xl shadow-xl w-full max-w-md">
-        <h1 className="text-3xl font-black text-center mb-2 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-black text-center mb-2 text-amber-400">
           Smart Apiary
         </h1>
         <p className="text-slate-400 text-center text-sm mb-8">Prijavite se na platformu</p>
