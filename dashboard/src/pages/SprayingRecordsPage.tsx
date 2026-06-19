@@ -34,6 +34,7 @@ function SprayingRecordsPage() {
   const [records, setRecords] = useState<SprayingRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [windWarning, setWindWarning] = useState('')
@@ -102,9 +103,7 @@ function SprayingRecordsPage() {
       )
 
       setSuccess('Zapis o prskanju uspješno sačuvan.')
-      if (response.data.windWarning) {
-        setWindWarning(response.data.windWarning)
-      }
+      if (response.data.windWarning) setWindWarning(response.data.windWarning)
       setChemicalName('')
       setDurationHours('')
       setStartTime('')
@@ -120,6 +119,35 @@ function SprayingRecordsPage() {
       }
     } finally {
       setSaving(false)
+    }
+  }
+
+  const exportPdf = async () => {
+    if (!selectedParcelId) return
+
+    setExporting(true)
+    setError('')
+
+    try {
+      const response = await axios.get(
+        `${apiBase}/farmer/spraying-records/${selectedParcelId}/export-pdf`,
+        {
+          headers,
+          params: { from, to },
+          responseType: 'blob',
+        },
+      )
+
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `karton-prskanja-${new Date().toISOString().slice(0, 10)}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('Greška pri generisanju PDF-a.')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -225,7 +253,7 @@ function SprayingRecordsPage() {
           <section className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-800">
               <h2 className="text-white font-bold mb-3">Istorija prskanja</h2>
-              <div className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
+              <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
                 <div>
                   <label className="block text-slate-400 text-xs mb-1">Od</label>
                   <input
@@ -250,13 +278,18 @@ function SprayingRecordsPage() {
                 >
                   Filtriraj
                 </button>
+                <button
+                  onClick={exportPdf}
+                  disabled={exporting || records.length === 0}
+                  className="bg-slate-600 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded text-sm transition-colors disabled:opacity-50"
+                >
+                  {exporting ? 'Generisanje...' : 'Izvezi PDF'}
+                </button>
               </div>
             </div>
 
             {records.length === 0 ? (
-              <div className="p-5 text-slate-400 text-sm">
-                Nema zapisa za izabrani period.
-              </div>
+              <div className="p-5 text-slate-400 text-sm">Nema zapisa za izabrani period.</div>
             ) : (
               <>
                 <div className="px-5 py-2 text-slate-500 text-xs border-b border-slate-800">

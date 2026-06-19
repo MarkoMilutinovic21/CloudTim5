@@ -11,6 +11,10 @@ using SmartApiary.Domain.Common;
 using SmartApiary.Infrastructure.Persistence;
 using Microsoft.OpenApi;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
+using QuestPDF.Infrastructure;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,7 +91,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed admin user
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -96,11 +99,8 @@ using (var scope = app.Services.CreateScope())
     if (!context.Users.Any(u => u.Email == "admin@smartapiary.com"))
     {
         var admin = User.Create(
-            "Admin",
-            "Admin",
-            "admin@smartapiary.com",
-            BCrypt.Net.BCrypt.HashPassword("Admin123!"),
-            UserRoles.Admin);
+            "Admin", "Admin", "admin@smartapiary.com",
+            BCrypt.Net.BCrypt.HashPassword("Admin123!"), UserRoles.Admin);
         admin.Activate();
         context.Users.Add(admin);
     }
@@ -108,11 +108,8 @@ using (var scope = app.Services.CreateScope())
     if (!context.Users.Any(u => u.Email == "farmer@test.com"))
     {
         var farmer = User.Create(
-            "Test",
-            "Farmer",
-            "farmer@test.com",
-            BCrypt.Net.BCrypt.HashPassword("Farmer123!"),
-            UserRoles.Farmer);
+            "Test", "Farmer", "farmer@test.com",
+            BCrypt.Net.BCrypt.HashPassword("Farmer123!"), UserRoles.Farmer);
         farmer.Activate();
         context.Users.Add(farmer);
     }
@@ -120,11 +117,8 @@ using (var scope = app.Services.CreateScope())
     if (!context.Users.Any(u => u.Email == "beekeeper@test.com"))
     {
         var beekeeper = User.Create(
-            "Test",
-            "Beekeeper",
-            "beekeeper@test.com",
-            BCrypt.Net.BCrypt.HashPassword("Beekeeper123!"),
-            UserRoles.Beekeeper);
+            "Test", "Beekeeper", "beekeeper@test.com",
+            BCrypt.Net.BCrypt.HashPassword("Beekeeper123!"), UserRoles.Beekeeper);
         beekeeper.Activate();
         context.Users.Add(beekeeper);
     }
