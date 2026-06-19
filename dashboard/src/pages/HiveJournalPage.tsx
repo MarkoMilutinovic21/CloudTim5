@@ -39,6 +39,8 @@ function HiveJournalPage() {
   const [hiveOptions, setHiveOptions] = useState<HiveOption[]>([])
   const [loadingOptions, setLoadingOptions] = useState(false)
   const [form, setForm] = useState(emptyEntry)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formErrors, setFormErrors] = useState<{ title?: string; content?: string }>({})
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -110,14 +112,47 @@ function HiveJournalPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const createEntry = async () => {
+  const handleEdit = (entry: JournalEntry) => {
+    setEditingId(entry.id)
+    setForm({
+      entryDate: new Date(entry.entryDate).toISOString().slice(0, 16),
+      title: entry.title,
+      content: entry.content,
+      bottomBoardColor: entry.bottomBoardColor,
+      honeyFrames: entry.honeyFrames.toString(),
+      honeyKg: entry.honeyKg.toString(),
+      broodFrames: entry.broodFrames.toString(),
+      queenPresent: entry.queenPresent,
+    })
+    setFormErrors({})
+    setError('')
+    setSuccess('')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setForm(emptyEntry)
+    setFormErrors({})
+    setError('')
+    setSuccess('')
+  }
+
+  const saveEntry = async () => {
     const trimmedHiveId = hiveId.trim()
-    if (!trimmedHiveId) {
-      setError('HiveId je obavezan.')
+
+    const errors: { title?: string; content?: string } = {}
+    if (!form.title.trim()) errors.title = 'Molim vas popunite naslov.'
+    if (!form.content.trim()) errors.content = 'Molim vas popunite napomenu.'
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
       return
     }
-    if (!form.title.trim() || !form.content.trim()) {
-      setError('Naslov i sadrzaj su obavezni.')
+
+    setFormErrors({})
+
+    if (!trimmedHiveId) {
+      setError('HiveId je obavezan.')
       return
     }
 
@@ -125,24 +160,33 @@ function HiveJournalPage() {
     setError('')
     setSuccess('')
 
+    const payload = {
+      hiveId: trimmedHiveId,
+      entryDate: new Date(form.entryDate).toISOString(),
+      title: form.title,
+      content: form.content,
+      bottomBoardColor: form.bottomBoardColor,
+      honeyFrames: Number(form.honeyFrames) || 0,
+      honeyKg: Number(form.honeyKg) || 0,
+      broodFrames: Number(form.broodFrames) || 0,
+      queenPresent: form.queenPresent,
+    }
+
     try {
-      await axios.post(
-        'http://localhost:5108/api/HiveJournal',
-        {
-          hiveId: trimmedHiveId,
-          entryDate: new Date(form.entryDate).toISOString(),
-          title: form.title,
-          content: form.content,
-          bottomBoardColor: form.bottomBoardColor,
-          honeyFrames: Number(form.honeyFrames) || 0,
-          honeyKg: Number(form.honeyKg) || 0,
-          broodFrames: Number(form.broodFrames) || 0,
-          queenPresent: form.queenPresent,
-        },
-        { headers },
-      )
+      if (editingId) {
+        await axios.put(
+          `http://localhost:5108/api/HiveJournal/${trimmedHiveId}/${editingId}`,
+          payload,
+          { headers },
+        )
+        setSuccess('Zapis je izmenjen.')
+        setEditingId(null)
+      } else {
+        await axios.post('http://localhost:5108/api/HiveJournal', payload, { headers })
+        setSuccess('Zapis je dodat u dnevnik.')
+      }
+
       setForm(emptyEntry)
-      setSuccess('Zapis je dodat u dnevnik.')
       await fetchEntries(trimmedHiveId)
     } catch (err) {
       console.error('Journal save failed:', err)
@@ -237,7 +281,9 @@ function HiveJournalPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6">
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-            <h2 className="text-white font-bold text-lg mb-4">Novi zapis</h2>
+            <h2 className="text-white font-bold text-lg mb-4">
+              {editingId ? 'Izmena zapisa' : 'Novi zapis'}
+            </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-slate-400 text-sm mb-2">Datum i vreme pregleda</label>
@@ -252,10 +298,18 @@ function HiveJournalPage() {
                 <label className="block text-slate-400 text-sm mb-2">Naslov</label>
                 <input
                   value={form.title}
-                  onChange={(event) => setForm({ ...form, title: event.target.value })}
-                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+                  onChange={(event) => {
+                    setForm({ ...form, title: event.target.value })
+                    if (formErrors.title) setFormErrors({ ...formErrors, title: undefined })
+                  }}
+                  className={`w-full bg-slate-800 text-white border rounded px-4 py-3 focus:outline-none focus:border-yellow-500 ${
+                    formErrors.title ? 'border-red-500' : 'border-slate-700'
+                  }`}
                   placeholder="Prolecni pregled"
                 />
+                {formErrors.title && (
+                  <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>
+                )}
               </div>
               <div>
                 <label className="block text-slate-400 text-sm mb-2">Boja podnjace</label>
@@ -312,18 +366,36 @@ function HiveJournalPage() {
                 <label className="block text-slate-400 text-sm mb-2">Napomena</label>
                 <textarea
                   value={form.content}
-                  onChange={(event) => setForm({ ...form, content: event.target.value })}
-                  className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 min-h-40 focus:outline-none focus:border-yellow-500"
+                  onChange={(event) => {
+                    setForm({ ...form, content: event.target.value })
+                    if (formErrors.content) setFormErrors({ ...formErrors, content: undefined })
+                  }}
+                  className={`w-full bg-slate-800 text-white border rounded px-4 py-3 min-h-40 focus:outline-none focus:border-yellow-500 ${
+                    formErrors.content ? 'border-red-500' : 'border-slate-700'
+                  }`}
                   placeholder="Boja podnjace, ramovi sa medom, leglo, matica, napomene..."
                 />
+                {formErrors.content && (
+                  <p className="text-red-400 text-xs mt-1">{formErrors.content}</p>
+                )}
               </div>
-              <button
-                onClick={createEntry}
-                disabled={saving}
-                className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-3 rounded transition-colors disabled:opacity-50"
-              >
-                {saving ? 'Cuvanje...' : 'Dodaj zapis'}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={saveEntry}
+                  disabled={saving}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-3 rounded transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Cuvanje...' : editingId ? 'Sacuvaj izmene' : 'Dodaj zapis'}
+                </button>
+                {editingId && (
+                  <button
+                    onClick={handleCancelEdit}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded transition-colors"
+                  >
+                    Odustani
+                  </button>
+                )}
+              </div>
             </div>
           </section>
 
@@ -336,7 +408,7 @@ function HiveJournalPage() {
             {entries.length === 0 ? (
               <div className="p-5 text-slate-400">Nema zapisa za izabranu kosnicu.</div>
             ) : (
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-green-700">
                 {visibleEntries.map((entry) => (
                   <article key={entry.id} className="p-5">
                     <div className="flex items-start justify-between gap-4">
@@ -344,12 +416,20 @@ function HiveJournalPage() {
                         <h3 className="text-white font-bold">{entry.title}</h3>
                         <p className="text-slate-500 text-sm">{new Date(entry.entryDate).toLocaleString('sr-RS')}</p>
                       </div>
-                      <button
-                        onClick={() => deleteEntry(entry.id)}
-                        className="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-1 rounded transition-colors"
-                      >
-                        Obrisi
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(entry)}
+                          className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded transition-colors"
+                        >
+                          Izmeni
+                        </button>
+                        <button
+                          onClick={() => deleteEntry(entry.id)}
+                          className="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-1 rounded transition-colors"
+                        >
+                          Obrisi
+                        </button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 text-sm">
                       <Info label="Podnjaca" value={entry.bottomBoardColor || '-'} />

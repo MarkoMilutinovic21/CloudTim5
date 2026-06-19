@@ -32,6 +32,18 @@ public class HiveJournalController(IMediator mediator) : ControllerBase
         return Ok(new { id = entryId, message = "Zapis u dnevniku uspešno kreiran." });
     }
 
+    [HttpPut("{hiveId:guid}/{entryId:guid}")]
+    public async Task<IActionResult> UpdateJournalEntry(
+        Guid hiveId,
+        Guid entryId,
+        [FromBody] UpdateJournalEntryCommand command,
+        CancellationToken ct)
+    {
+        var commandWithIds = command with { EntryId = entryId, HiveId = hiveId };
+        await mediator.Send(commandWithIds, ct);
+        return Ok(new { message = "Zapis u dnevniku uspešno izmenjen." });
+    }
+
     [HttpDelete("{hiveId}/{entryId}")]
     public async Task<IActionResult> DeleteJournalEntry(Guid hiveId, Guid entryId, CancellationToken ct)
     {

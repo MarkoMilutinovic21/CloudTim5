@@ -52,6 +52,19 @@ public class HiveJournalEntryRepository(IOptions<AzureTableOptions> options) : I
         await _tableClient.AddEntityAsync(entity, ct);
     }
 
+    public async Task UpdateAsync(HiveJournalEntry entry, CancellationToken ct = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+
+        HiveJournalEntryEntity entity = MapToEntity(entry);
+
+        await _tableClient.UpdateEntityAsync(
+            entity,
+            ETag.All,
+            TableUpdateMode.Replace,
+            ct);
+    }
+
     public async Task DeleteAsync(HiveJournalEntry entry, CancellationToken ct = default)
     {
         await _tableClient.CreateIfNotExistsAsync(ct);

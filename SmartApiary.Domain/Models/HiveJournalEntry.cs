@@ -71,4 +71,24 @@ public class HiveJournalEntry : AggregateRoot
             CreatedAt = createdAt
         };
     }
+
+    public void Update(
+        DateTime entryDate,
+        string title,
+        string content,
+        string bottomBoardColor,
+        int honeyFrames,
+        double honeyKg,
+        int broodFrames,
+        bool queenPresent)
+    {
+        EntryDate = entryDate;
+        Title = title;
+        Content = content;
+        BottomBoardColor = bottomBoardColor;
+        HoneyFrames = honeyFrames;
+        HoneyKg = honeyKg;
+        BroodFrames = broodFrames;
+        QueenPresent = queenPresent;
+    }
 }
