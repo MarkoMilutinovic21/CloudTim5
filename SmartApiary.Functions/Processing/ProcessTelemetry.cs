@@ -84,7 +84,7 @@ public class ProcessTelemetry(
         bool weightDropDetected = hasPrevious &&
             measurement.WeightKg <= previousMeasurement!.WeightKg * 0.7;
 
-        bool lowBatteryDetected = measurement.BatteryPercent < 20 &&
+        bool lowBatteryDetected = measurement.BatteryPercent < 15 &&
             (previousMeasurement is null || previousMeasurement.BatteryPercent >= 20);
 
         if (!weightDropDetected && !lowBatteryDetected)

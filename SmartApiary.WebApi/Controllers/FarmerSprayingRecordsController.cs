@@ -8,7 +8,7 @@ using SmartApiary.Application.Features.SprayingRecords.Queries;
 
 [ApiController]
 [Route("api/farmer/spraying-records")]
-//[Authorize(Roles = "Farmer")]   
+[Authorize(Roles = "Farmer")]   
 public class FarmerSprayingRecordsController(IMediator mediator) : ControllerBase
 {
     /// <summary>
