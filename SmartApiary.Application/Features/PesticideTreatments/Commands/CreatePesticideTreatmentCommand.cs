@@ -16,27 +16,18 @@ public record CreatePesticideTreatmentCommand(
 
 public record CreatePesticideTreatmentResult(
     Guid Id,
-    int NotifiedBeekeepersCount);
+    int NotifiedBeekeepersCount,
+    string? WindWarning);
 
 public class CreatePesticideTreatmentCommandValidator : AbstractValidator<CreatePesticideTreatmentCommand>
 {
     public CreatePesticideTreatmentCommandValidator()
     {
-        RuleFor(x => x.ParcelId)
-            .NotEmpty();
-
-        RuleFor(x => x.PlannedStartAt)
-            .GreaterThan(DateTime.MinValue);
-
-        RuleFor(x => x.DurationHours)
-            .GreaterThan(0)
-            .LessThanOrEqualTo(24);
-
-        RuleFor(x => x.PesticideType)
-            .MaximumLength(200);
-
-        RuleFor(x => x.FarmerId)
-            .NotEmpty();
+        RuleFor(x => x.ParcelId).NotEmpty();
+        RuleFor(x => x.PlannedStartAt).GreaterThan(DateTime.MinValue);
+        RuleFor(x => x.DurationHours).GreaterThan(0).LessThanOrEqualTo(24);
+        RuleFor(x => x.PesticideType).MaximumLength(200);
+        RuleFor(x => x.FarmerId).NotEmpty();
     }
 }
 
@@ -46,7 +37,8 @@ public class CreatePesticideTreatmentCommandHandler(
     IApiaryRepository apiaryRepository,
     IUserRepository userRepository,
     IBeekeeperAlertRepository alertRepository,
-    IEmailService emailService)
+    IEmailService emailService,
+    IWeatherService weatherService)
     : IRequestHandler<CreatePesticideTreatmentCommand, CreatePesticideTreatmentResult>
 {
     public async Task<CreatePesticideTreatmentResult> Handle(
@@ -56,51 +48,35 @@ public class CreatePesticideTreatmentCommandHandler(
         Parcel? parcel = await parcelRepository.GetByIdAsync(request.ParcelId, ct);
 
         if (parcel is null)
-        {
             throw new Exception("Parcela nije pronađena.");
-        }
 
         if (parcel.OwnerId != request.FarmerId)
-        {
             throw new Exception("Nemate pristup ovoj parceli.");
-        }
 
         IReadOnlyCollection<User> nearbyBeekeepers =
             await PesticideTreatmentNotificationHelper.GetNearbyBeekeepersAsync(
-                parcel,
-                apiaryRepository,
-                userRepository,
-                ct);
+                parcel, apiaryRepository, userRepository, ct);
 
         string pesticideType = request.PesticideType ?? string.Empty;
 
         string message = PesticideTreatmentNotificationHelper.CreateScheduledMessage(
-            parcel,
-            request.PlannedStartAt,
-            request.DurationHours,
-            pesticideType);
+            parcel, request.PlannedStartAt, request.DurationHours, pesticideType);
 
         int notifiedCount = await BeekeeperAlertHelper.CreateAlertsAsync(
-            nearbyBeekeepers,
-            alertRepository,
-            emailService,
+            nearbyBeekeepers, alertRepository, emailService,
             BeekeeperAlertTypes.PesticideTreatment,
             "Upozorenje o tretiranju pesticidima - Smart Apiary",
-            message,
-            ct);
+            message, ct);
 
         PesticideTreatment treatment = PesticideTreatment.Create(
-            request.ParcelId,
-            request.FarmerId,
-            request.PlannedStartAt,
-            request.DurationHours,
-            pesticideType,
-            notifiedCount);
+            request.ParcelId, request.FarmerId, request.PlannedStartAt,
+            request.DurationHours, pesticideType, notifiedCount);
 
         await treatmentRepository.SaveAsync(treatment, ct);
 
-        return new CreatePesticideTreatmentResult(
-            treatment.Id,
-            treatment.NotifiedBeekeepersCount);
+        string? windWarning = await weatherService.GetWeatherWarningAsync(
+            parcel.Latitude, parcel.Longitude, ct);
+
+        return new CreatePesticideTreatmentResult(treatment.Id, treatment.NotifiedBeekeepersCount, windWarning);
     }
 }

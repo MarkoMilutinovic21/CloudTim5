@@ -19,6 +19,8 @@ interface SprayingRecord {
 
 const apiBase = 'http://localhost:5108/api'
 
+const maxDateTime = () => new Date().toISOString().slice(0, 16)
+
 function SprayingRecordsPage() {
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [records, setRecords] = useState<SprayingRecord[]>([])
@@ -95,6 +97,9 @@ function SprayingRecordsPage() {
     } catch (err: any) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         setError('Nemate pristup. Prijavite se kao farmer.')
+      } else if (err.response?.data?.errors) {
+        const firstError = Object.values(err.response.data.errors)[0] as string[]
+        setError(firstError[0])
       } else {
         setError('Greška pri čuvanju zapisa.')
       }
@@ -165,6 +170,7 @@ function SprayingRecordsPage() {
               <input
                 type="datetime-local"
                 value={startTime}
+                max={maxDateTime()}
                 onChange={(e) => setStartTime(e.target.value)}
                 className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
               />

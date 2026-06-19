@@ -51,6 +51,7 @@ public class PesticideTreatmentsController(IMediator mediator) : ControllerBase
         {
             id = result.Id,
             notifiedBeekeepersCount = result.NotifiedBeekeepersCount,
+            windWarning = result.WindWarning,
             message = $"Najava tretiranja je uspešno kreirana. Broj obaveštenih pčelara: {result.NotifiedBeekeepersCount}."
         });
     }
@@ -74,6 +75,7 @@ public class PesticideTreatmentsController(IMediator mediator) : ControllerBase
         return Ok(new
         {
             notifiedBeekeepersCount = result.NotifiedBeekeepersCount,
+            windWarning = result.WindWarning,
             message = $"Najava tretiranja je uspešno izmenjena. Broj obaveštenih pčelara: {result.NotifiedBeekeepersCount}."
         });
     }
@@ -83,10 +85,7 @@ public class PesticideTreatmentsController(IMediator mediator) : ControllerBase
     {
         await mediator.Send(new CancelPesticideTreatmentCommand(id, GetUserId()), ct);
 
-        return Ok(new
-        {
-            message = "Najava tretiranja je uspešno otkazana."
-        });
+        return Ok(new { message = "Najava tretiranja je uspešno otkazana." });
     }
 }
 

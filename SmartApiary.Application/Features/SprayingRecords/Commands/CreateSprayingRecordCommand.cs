@@ -21,7 +21,10 @@ public class CreateSprayingRecordValidator : AbstractValidator<CreateSprayingRec
         RuleFor(x => x.ParcelId).NotEmpty();
         RuleFor(x => x.DurationHours).GreaterThan(0);
         RuleFor(x => x.ChemicalName).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.StartTime).NotEmpty();
+        RuleFor(x => x.StartTime)
+            .NotEmpty()
+            .LessThanOrEqualTo(DateTime.UtcNow)
+            .WithMessage("Datum prskanja ne može biti u budućnosti.");
     }
 }
 
@@ -31,7 +34,7 @@ public class CreateSprayingRecordHandler(
     IWeatherService weatherService
 ) : IRequestHandler<CreateSprayingRecordCommand, CreateSprayingRecordResult>
 {
-    private const double WindSpeedThresholdMs = 5.5;
+    private const double WindSpeedThresholdMs = 5.0;
 
     public async Task<CreateSprayingRecordResult> Handle(CreateSprayingRecordCommand request, CancellationToken ct)
     {
@@ -51,7 +54,7 @@ public class CreateSprayingRecordHandler(
             var windSpeed = await weatherService.GetCurrentWindSpeedAsync(parcel.Latitude, parcel.Longitude, ct);
             if (windSpeed.HasValue && windSpeed.Value > WindSpeedThresholdMs)
             {
-                windWarning = $"Trenutna brzina vjetra na parceli \"{parcel.Name}\" je {windSpeed.Value:F1} m/s — prskanje se ne preporučuje!";
+                windWarning = $"Brzina vjetra na parceli \"{parcel.Name}\" u trenutku prskanja bila je {windSpeed.Value:F1} m/s — uslovi nisu bili idealni za prskanje.";
             }
         }
 

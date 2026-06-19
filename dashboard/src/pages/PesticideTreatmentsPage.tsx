@@ -51,6 +51,7 @@ function PesticideTreatmentsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [windWarning, setWindWarning] = useState('')
 
   const token = localStorage.getItem('token')
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
@@ -68,8 +69,6 @@ function PesticideTreatmentsPage() {
       setParcels(parcelsResponse.data)
       setTreatments(treatmentsResponse.data)
     } catch (err: any) {
-      console.error('Greška pri učitavanju najava tretiranja:', err)
-
       if (err.response) {
         setError(`Greška pri učitavanju najava tretiranja. Status: ${err.response.status}`)
       } else {
@@ -82,37 +81,24 @@ function PesticideTreatmentsPage() {
 
   useEffect(() => {
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setForm({
-      ...form,
-      [event.target.name]: event.target.value,
-    })
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [event.target.name]: event.target.value })
   }
 
   const validateForm = () => {
     if (!form.parcelId) return 'Morate izabrati parcelu.'
     if (!form.plannedStartAt) return 'Morate uneti datum i vreme početka prskanja.'
-
     const duration = Number(form.durationHours)
-
-    if (Number.isNaN(duration) || duration <= 0) {
-      return 'Trajanje mora biti veće od 0.'
-    }
-
-    if (duration > 24) {
-      return 'Trajanje ne može biti duže od 24 sata.'
-    }
-
+    if (Number.isNaN(duration) || duration <= 0) return 'Trajanje mora biti veće od 0.'
+    if (duration > 24) return 'Trajanje ne može biti duže od 24 sata.'
     return ''
   }
 
   const handleSubmit = async () => {
     const validationError = validateForm()
-
     if (validationError) {
       setError(validationError)
       setSuccess('')
@@ -122,6 +108,7 @@ function PesticideTreatmentsPage() {
     setSaving(true)
     setError('')
     setSuccess('')
+    setWindWarning('')
 
     const payload = {
       parcelId: form.parcelId,
@@ -132,25 +119,17 @@ function PesticideTreatmentsPage() {
 
     try {
       const response = editingId
-        ? await axios.put(
-            `http://localhost:5108/api/PesticideTreatments/${editingId}`,
-            payload,
-            { headers }
-          )
-        : await axios.post(
-            'http://localhost:5108/api/PesticideTreatments',
-            payload,
-            { headers }
-          )
+        ? await axios.put(`http://localhost:5108/api/PesticideTreatments/${editingId}`, payload, { headers })
+        : await axios.post('http://localhost:5108/api/PesticideTreatments', payload, { headers })
 
       setSuccess(response.data.message ?? 'Najava tretiranja je uspešno sačuvana.')
+      if (response.data.windWarning) {
+        setWindWarning(response.data.windWarning)
+      }
       setForm(emptyForm)
       setEditingId(null)
-
       await fetchData()
     } catch (err: any) {
-      console.error('Greška pri čuvanju najave tretiranja:', err)
-
       if (err.response) {
         setError(`Greška pri čuvanju najave tretiranja. Status: ${err.response.status}`)
       } else {
@@ -163,16 +142,15 @@ function PesticideTreatmentsPage() {
 
   const handleEdit = (treatment: PesticideTreatment) => {
     setEditingId(treatment.id)
-
     setForm({
       parcelId: treatment.parcelId,
       plannedStartAt: toDateTimeLocalValue(treatment.plannedStartAt),
       durationHours: treatment.durationHours.toString(),
       pesticideType: treatment.pesticideType ?? '',
     })
-
     setError('')
     setSuccess('')
+    setWindWarning('')
   }
 
   const handleCancelEdit = () => {
@@ -180,6 +158,7 @@ function PesticideTreatmentsPage() {
     setForm(emptyForm)
     setError('')
     setSuccess('')
+    setWindWarning('')
   }
 
   const handleCancelTreatment = async (id: string) => {
@@ -187,19 +166,17 @@ function PesticideTreatmentsPage() {
 
     setError('')
     setSuccess('')
+    setWindWarning('')
 
     try {
       const response = await axios.put(
         `http://localhost:5108/api/PesticideTreatments/${id}/cancel`,
         {},
-        { headers }
+        { headers },
       )
-
       setSuccess(response.data.message ?? 'Najava tretiranja je otkazana.')
       await fetchData()
     } catch (err: any) {
-      console.error('Greška pri otkazivanju najave tretiranja:', err)
-
       if (err.response) {
         setError(`Greška pri otkazivanju najave tretiranja. Status: ${err.response.status}`)
       } else {
@@ -211,27 +188,19 @@ function PesticideTreatmentsPage() {
   const getStatusLabel = (status: string) => {
     if (status === 'Cancelled') return 'Otkazano'
     if (status === 'Scheduled') return 'Zakazano'
-
     return status
   }
 
   const getStatusClasses = (status: string) => {
-    if (status === 'Cancelled') {
-      return 'bg-red-900/50 text-red-300 border-red-700'
-    }
-
+    if (status === 'Cancelled') return 'bg-red-900/50 text-red-300 border-red-700'
     return 'bg-green-900/50 text-green-300 border-green-700'
   }
 
   const formatDateTime = (value: string) => {
     if (!value) return '-'
-
     return new Date(value).toLocaleString('sr-RS', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     })
   }
 
@@ -248,10 +217,7 @@ function PesticideTreatmentsPage() {
       <div className="max-w-[1500px] mx-auto">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mt-2">
-              Najave tretiranja pesticidima
-            </h1>
-
+            <h1 className="text-3xl font-bold text-white mt-2">Najave tretiranja pesticidima</h1>
             <p className="text-slate-400 text-sm mt-1">
               Kreiranje, pomeranje i otkazivanje najava prskanja za vaše parcele.
             </p>
@@ -264,10 +230,14 @@ function PesticideTreatmentsPage() {
             {error}
           </div>
         )}
-
         {success && (
           <div className="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded mb-4 text-sm">
             {success}
+          </div>
+        )}
+        {windWarning && (
+          <div className="bg-yellow-900/50 border border-yellow-600 text-yellow-300 px-4 py-3 rounded mb-4 text-sm">
+            ⚠ {windWarning}
           </div>
         )}
 
@@ -293,7 +263,6 @@ function PesticideTreatmentsPage() {
                   className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
                 >
                   <option value="">Izaberite parcelu</option>
-
                   {parcels.map((parcel) => (
                     <option key={parcel.id} value={parcel.id}>
                       {parcel.name} — {parcel.location}
@@ -303,9 +272,7 @@ function PesticideTreatmentsPage() {
               </div>
 
               <div>
-                <label className="block text-slate-400 text-sm mb-2">
-                  Datum i vreme početka
-                </label>
+                <label className="block text-slate-400 text-sm mb-2">Datum i vreme početka</label>
                 <input
                   name="plannedStartAt"
                   type="datetime-local"
@@ -316,9 +283,7 @@ function PesticideTreatmentsPage() {
               </div>
 
               <div>
-                <label className="block text-slate-400 text-sm mb-2">
-                  Očekivano trajanje u satima
-                </label>
+                <label className="block text-slate-400 text-sm mb-2">Očekivano trajanje u satima</label>
                 <input
                   name="durationHours"
                   type="number"
@@ -332,9 +297,7 @@ function PesticideTreatmentsPage() {
               </div>
 
               <div>
-                <label className="block text-slate-400 text-sm mb-2">
-                  Tip preparata
-                </label>
+                <label className="block text-slate-400 text-sm mb-2">Tip preparata</label>
                 <input
                   name="pesticideType"
                   value={form.pesticideType}
@@ -382,62 +345,38 @@ function PesticideTreatmentsPage() {
                 <table className="w-full table-fixed text-sm">
                   <thead>
                     <tr className="border-b border-slate-800">
-                      <th className="w-[20%] text-left text-slate-400 px-4 py-4 font-medium">
-                        Parcela
-                      </th>
-                      <th className="w-[18%] text-left text-slate-400 px-4 py-4 font-medium">
-                        Početak
-                      </th>
-                      <th className="w-[10%] text-left text-slate-400 px-4 py-4 font-medium">
-                        Trajanje
-                      </th>
-                      <th className="w-[16%] text-left text-slate-400 px-4 py-4 font-medium">
-                        Preparat
-                      </th>
-                      <th className="w-[12%] text-left text-slate-400 px-4 py-4 font-medium">
-                        Obavešteno
-                      </th>
-                      <th className="w-[11%] text-left text-slate-400 px-4 py-4 font-medium">
-                        Status
-                      </th>
-                      <th className="w-[13%] text-left text-slate-400 px-4 py-4 font-medium">
-                        Akcije
-                      </th>
+                      <th className="w-[20%] text-left text-slate-400 px-4 py-4 font-medium">Parcela</th>
+                      <th className="w-[18%] text-left text-slate-400 px-4 py-4 font-medium">Početak</th>
+                      <th className="w-[10%] text-left text-slate-400 px-4 py-4 font-medium">Trajanje</th>
+                      <th className="w-[16%] text-left text-slate-400 px-4 py-4 font-medium">Preparat</th>
+                      <th className="w-[12%] text-left text-slate-400 px-4 py-4 font-medium">Obavešteno</th>
+                      <th className="w-[11%] text-left text-slate-400 px-4 py-4 font-medium">Status</th>
+                      <th className="w-[13%] text-left text-slate-400 px-4 py-4 font-medium">Akcije</th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {treatments.map((treatment) => (
-                      <tr
-                        key={treatment.id}
-                        className="border-b border-slate-800 hover:bg-slate-800/50 align-top"
-                      >
+                      <tr key={treatment.id} className="border-b border-slate-800 hover:bg-slate-800/50 align-top">
                         <td className="px-4 py-4 text-white font-medium whitespace-normal break-words">
                           {treatment.parcelName}
                         </td>
-
                         <td className="px-4 py-4 text-slate-300 whitespace-normal break-words">
                           {formatDateTime(treatment.plannedStartAt)}
                         </td>
-
                         <td className="px-4 py-4 text-slate-300 whitespace-normal break-words">
                           {treatment.durationHours} h
                         </td>
-
                         <td className="px-4 py-4 text-slate-300 whitespace-normal break-words">
                           {treatment.pesticideType || '-'}
                         </td>
-
                         <td className="px-4 py-4 text-slate-300 whitespace-normal break-words">
                           {treatment.notifiedBeekeepersCount}
                         </td>
-
                         <td className="px-4 py-4">
                           <span className={`inline-block border rounded-full px-3 py-1 text-xs ${getStatusClasses(treatment.status)}`}>
                             {getStatusLabel(treatment.status)}
                           </span>
                         </td>
-
                         <td className="px-4 py-4">
                           <div className="flex flex-col 2xl:flex-row gap-2">
                             <button
@@ -447,7 +386,6 @@ function PesticideTreatmentsPage() {
                             >
                               Izmeni
                             </button>
-
                             <button
                               onClick={() => handleCancelTreatment(treatment.id)}
                               disabled={treatment.status === 'Cancelled'}
@@ -474,7 +412,6 @@ function toDateTimeLocalValue(value: string) {
   const date = new Date(value)
   const offset = date.getTimezoneOffset()
   const localDate = new Date(date.getTime() - offset * 60 * 1000)
-
   return localDate.toISOString().slice(0, 16)
 }
 
