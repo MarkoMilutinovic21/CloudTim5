@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SmartApiary.Application.Common.Interfaces;
+using SmartApiary.Infrastructure.External;
 using SmartApiary.Infrastructure.Persistence;
 using SmartApiary.Infrastructure.Persistence.Repositories;
 using SmartApiary.Infrastructure.Persistence.AzureTable.Repositories;
@@ -39,9 +40,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBeekeeperAlertRepository, BeekeeperAlertRepository>();
 
         services.AddScoped<IEmailService, EmailService>();
-
         services.AddScoped<ICropRepository, CropRepository>();
         services.AddScoped<ISprayingRecordRepository, SprayingRecordRepository>();
+
+        services.AddHttpClient<IWeatherService, OpenWeatherMapService>();
 
         return services;
     }

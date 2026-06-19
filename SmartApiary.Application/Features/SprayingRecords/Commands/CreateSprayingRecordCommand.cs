@@ -10,32 +10,30 @@ public record CreateSprayingRecordCommand(
     double DurationHours,
     string ChemicalName,
     Guid ParcelId
-) : IRequest<Guid>;
+) : IRequest<CreateSprayingRecordResult>;
+
+public record CreateSprayingRecordResult(Guid Id, string? WindWarning);
 
 public class CreateSprayingRecordValidator : AbstractValidator<CreateSprayingRecordCommand>
 {
     public CreateSprayingRecordValidator()
     {
-        RuleFor(x => x.ParcelId)
-            .NotEmpty();
-
-        RuleFor(x => x.DurationHours)
-            .GreaterThan(0);
-
-        RuleFor(x => x.ChemicalName)
-            .NotEmpty()
-            .MaximumLength(100);
-
-        RuleFor(x => x.StartTime)
-            .NotEmpty();
+        RuleFor(x => x.ParcelId).NotEmpty();
+        RuleFor(x => x.DurationHours).GreaterThan(0);
+        RuleFor(x => x.ChemicalName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.StartTime).NotEmpty();
     }
 }
 
 public class CreateSprayingRecordHandler(
-    ISprayingRecordRepository repo
-) : IRequestHandler<CreateSprayingRecordCommand, Guid>
+    ISprayingRecordRepository repo,
+    IParcelRepository parcelRepository,
+    IWeatherService weatherService
+) : IRequestHandler<CreateSprayingRecordCommand, CreateSprayingRecordResult>
 {
-    public async Task<Guid> Handle(CreateSprayingRecordCommand request, CancellationToken ct)
+    private const double WindSpeedThresholdMs = 5.5;
+
+    public async Task<CreateSprayingRecordResult> Handle(CreateSprayingRecordCommand request, CancellationToken ct)
     {
         var record = SprayingRecord.Create(
             request.StartTime,
@@ -46,7 +44,17 @@ public class CreateSprayingRecordHandler(
 
         await repo.SaveAsync(record, ct);
 
-        return record.Id;
+        string? windWarning = null;
+        var parcel = await parcelRepository.GetByIdAsync(request.ParcelId, ct);
+        if (parcel is not null)
+        {
+            var windSpeed = await weatherService.GetCurrentWindSpeedAsync(parcel.Latitude, parcel.Longitude, ct);
+            if (windSpeed.HasValue && windSpeed.Value > WindSpeedThresholdMs)
+            {
+                windWarning = $"Trenutna brzina vjetra na parceli \"{parcel.Name}\" je {windSpeed.Value:F1} m/s — prskanje se ne preporučuje!";
+            }
+        }
+
+        return new CreateSprayingRecordResult(record.Id, windWarning);
     }
 }
-

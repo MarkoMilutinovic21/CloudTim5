@@ -8,22 +8,16 @@ using SmartApiary.Application.Features.SprayingRecords.Queries;
 
 [ApiController]
 [Route("api/farmer/spraying-records")]
-[Authorize(Roles = "Farmer")]   
+[Authorize(Roles = "Farmer")]
 public class FarmerSprayingRecordsController(IMediator mediator) : ControllerBase
 {
-    /// <summary>
-    /// Kreira novi zapis o prskanju (digitalni karton)
-    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create(CreateSprayingRecordCommand command, CancellationToken ct)
     {
-        var id = await mediator.Send(command, ct);
-        return Ok(id);
+        var result = await mediator.Send(command, ct);
+        return Ok(new { id = result.Id, windWarning = result.WindWarning });
     }
 
-    /// <summary>
-    /// Vraća sve zapise prskanja za određenu parcelu
-    /// </summary>
     [HttpGet("{parcelId}")]
     public async Task<IActionResult> Get(Guid parcelId, CancellationToken ct)
     {
