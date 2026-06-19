@@ -19,9 +19,13 @@ public class FarmerSprayingRecordsController(IMediator mediator) : ControllerBas
     }
 
     [HttpGet("{parcelId}")]
-    public async Task<IActionResult> Get(Guid parcelId, CancellationToken ct)
+    public async Task<IActionResult> Get(
+        Guid parcelId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        CancellationToken ct)
     {
-        var records = await mediator.Send(new GetSprayingRecordsQuery(parcelId), ct);
+        var records = await mediator.Send(new GetSprayingRecordsQuery(parcelId, from, to), ct);
         return Ok(records);
     }
 }

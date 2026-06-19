@@ -21,6 +21,14 @@ const apiBase = 'http://localhost:5108/api'
 
 const maxDateTime = () => new Date().toISOString().slice(0, 16)
 
+const defaultFrom = () => {
+  const d = new Date()
+  d.setDate(d.getDate() - 30)
+  return d.toISOString().slice(0, 10)
+}
+
+const defaultTo = () => new Date().toISOString().slice(0, 10)
+
 function SprayingRecordsPage() {
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [records, setRecords] = useState<SprayingRecord[]>([])
@@ -34,6 +42,9 @@ function SprayingRecordsPage() {
   const [startTime, setStartTime] = useState('')
   const [durationHours, setDurationHours] = useState('')
   const [chemicalName, setChemicalName] = useState('')
+
+  const [from, setFrom] = useState(defaultFrom())
+  const [to, setTo] = useState(defaultTo())
 
   const token = localStorage.getItem('token')
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
@@ -49,9 +60,13 @@ function SprayingRecordsPage() {
     }
   }
 
-  const fetchRecords = async (parcelId: string) => {
+  const fetchRecords = async (parcelId: string, fromDate = from, toDate = to) => {
+    if (!parcelId) return
     try {
-      const response = await axios.get(`${apiBase}/farmer/spraying-records/${parcelId}`, { headers })
+      const response = await axios.get(`${apiBase}/farmer/spraying-records/${parcelId}`, {
+        headers,
+        params: { from: fromDate, to: toDate },
+      })
       setRecords(response.data)
     } catch {
       setError('Greška pri učitavanju zapisa prskanja.')
@@ -206,32 +221,69 @@ function SprayingRecordsPage() {
           </div>
         </div>
 
-        {records.length > 0 && (
+        {selectedParcelId && (
           <section className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-800">
-              <h2 className="text-white font-bold">Istorija prskanja</h2>
-              <p className="text-slate-500 text-sm">{records.length} zapisa</p>
-            </div>
-            <div className="divide-y divide-slate-800">
-              {records.map((record) => (
-                <div key={record.id} className="p-5 grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <div className="text-slate-500 text-xs">Datum</div>
-                    <div className="text-slate-200 font-semibold mt-1">
-                      {new Date(record.startTime).toLocaleString('sr-RS')}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500 text-xs">Trajanje</div>
-                    <div className="text-slate-200 font-semibold mt-1">{record.durationHours} h</div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500 text-xs">Preparat</div>
-                    <div className="text-slate-200 font-semibold mt-1">{record.chemicalName}</div>
-                  </div>
+              <h2 className="text-white font-bold mb-3">Istorija prskanja</h2>
+              <div className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                <div>
+                  <label className="block text-slate-400 text-xs mb-1">Od</label>
+                  <input
+                    type="date"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-yellow-500"
+                  />
                 </div>
-              ))}
+                <div>
+                  <label className="block text-slate-400 text-xs mb-1">Do</label>
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+                <button
+                  onClick={() => fetchRecords(selectedParcelId)}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-4 py-2 rounded text-sm transition-colors"
+                >
+                  Filtriraj
+                </button>
+              </div>
             </div>
+
+            {records.length === 0 ? (
+              <div className="p-5 text-slate-400 text-sm">
+                Nema zapisa za izabrani period.
+              </div>
+            ) : (
+              <>
+                <div className="px-5 py-2 text-slate-500 text-xs border-b border-slate-800">
+                  {records.length} zapisa
+                </div>
+                <div className="divide-y divide-slate-800">
+                  {records.map((record) => (
+                    <div key={record.id} className="p-5 grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="text-slate-500 text-xs">Datum</div>
+                        <div className="text-slate-200 font-semibold mt-1">
+                          {new Date(record.startTime).toLocaleString('sr-RS')}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-slate-500 text-xs">Trajanje</div>
+                        <div className="text-slate-200 font-semibold mt-1">{record.durationHours} h</div>
+                      </div>
+                      <div>
+                        <div className="text-slate-500 text-xs">Preparat</div>
+                        <div className="text-slate-200 font-semibold mt-1">{record.chemicalName}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
         )}
       </div>

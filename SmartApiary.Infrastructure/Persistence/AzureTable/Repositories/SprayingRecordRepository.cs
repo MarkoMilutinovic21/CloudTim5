@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SmartApiary.Infrastructure.Persistence.AzureTable.Repositories;
+﻿namespace SmartApiary.Infrastructure.Persistence.AzureTable.Repositories;
 
 using Azure.Data.Tables;
 using Microsoft.Extensions.Options;
@@ -12,12 +6,9 @@ using SmartApiary.Application.Common.Interfaces;
 using SmartApiary.Domain.Models;
 using SmartApiary.Infrastructure.Persistence.AzureTable.Entities;
 
-public class SprayingRecordRepository(IOptions<AzureTableOptions> options)
-    : ISprayingRecordRepository
+public class SprayingRecordRepository(IOptions<AzureTableOptions> options) : ISprayingRecordRepository
 {
-    private readonly TableClient _tableClient = new(
-        options.Value.ConnectionString,
-        "SprayingRecords");
+    private readonly TableClient _tableClient = new(options.Value.ConnectionString, "SprayingRecords");
 
     public async Task SaveAsync(SprayingRecord record, CancellationToken ct = default)
     {
@@ -35,15 +26,18 @@ public class SprayingRecordRepository(IOptions<AzureTableOptions> options)
         await _tableClient.AddEntityAsync(entity, ct);
     }
 
-    public async Task<IReadOnlyCollection<SprayingRecord>> GetByParcelIdAsync(Guid parcelId, CancellationToken ct = default)
+    public async Task<IReadOnlyCollection<SprayingRecord>> GetByParcelIdAsync(
+        Guid parcelId,
+        DateTime? from = null,
+        DateTime? to = null,
+        CancellationToken ct = default)
     {
         await _tableClient.CreateIfNotExistsAsync(ct);
 
-        List<SprayingRecord> results = new();
+        var results = new List<SprayingRecord>();
 
         await foreach (SprayingRecordEntity entity in _tableClient.QueryAsync<SprayingRecordEntity>(
-            x => x.PartitionKey == parcelId.ToString(),
-            cancellationToken: ct))
+            x => x.PartitionKey == parcelId.ToString(), cancellationToken: ct))
         {
             results.Add(SprayingRecord.Rehydrate(
                 Guid.Parse(entity.RowKey),
@@ -53,7 +47,14 @@ public class SprayingRecordRepository(IOptions<AzureTableOptions> options)
                 parcelId));
         }
 
-        return results.AsReadOnly();
+        IEnumerable<SprayingRecord> filtered = results;
+
+        if (from.HasValue)
+            filtered = filtered.Where(r => r.StartTime.Date >= from.Value.Date);
+
+        if (to.HasValue)
+            filtered = filtered.Where(r => r.StartTime.Date <= to.Value.Date);
+
+        return filtered.OrderByDescending(r => r.StartTime).ToList().AsReadOnly();
     }
 }
-

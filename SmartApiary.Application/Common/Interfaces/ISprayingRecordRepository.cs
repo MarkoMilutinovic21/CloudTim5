@@ -1,15 +1,13 @@
-﻿using SmartApiary.Domain.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SmartApiary.Application.Common.Interfaces;
 
-namespace SmartApiary.Application.Common.Interfaces
+using SmartApiary.Domain.Models;
+
+public interface ISprayingRecordRepository
 {
-    public interface ISprayingRecordRepository
-    {
-        Task SaveAsync(SprayingRecord record, CancellationToken ct = default);
-        Task<IReadOnlyCollection<SprayingRecord>> GetByParcelIdAsync(Guid parcelId, CancellationToken ct = default);
-    }
+    Task SaveAsync(SprayingRecord record, CancellationToken ct = default);
+    Task<IReadOnlyCollection<SprayingRecord>> GetByParcelIdAsync(
+        Guid parcelId,
+        DateTime? from = null,
+        DateTime? to = null,
+        CancellationToken ct = default);
 }
