@@ -12,7 +12,6 @@ using SmartApiary.Infrastructure.Persistence;
 using Microsoft.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
-using QuestPDF.Infrastructure;
 
 QuestPDF.Settings.License = LicenseType.Community;
 

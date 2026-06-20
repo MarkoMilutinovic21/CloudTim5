@@ -305,7 +305,7 @@ function HiveJournalPage() {
                   className={`w-full bg-slate-800 text-white border rounded px-4 py-3 focus:outline-none focus:border-yellow-500 ${
                     formErrors.title ? 'border-red-500' : 'border-slate-700'
                   }`}
-                  placeholder="Prolecni pregled"
+                  placeholder="Unesite napomenu o pregledu"
                 />
                 {formErrors.title && (
                   <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>
@@ -317,7 +317,7 @@ function HiveJournalPage() {
                   value={form.bottomBoardColor}
                   onChange={(event) => setForm({ ...form, bottomBoardColor: event.target.value })}
                   className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-                  placeholder="Plava, zuta, zelena..."
+                  placeholder="Unesite boju podnjace"
                 />
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -373,7 +373,7 @@ function HiveJournalPage() {
                   className={`w-full bg-slate-800 text-white border rounded px-4 py-3 min-h-40 focus:outline-none focus:border-yellow-500 ${
                     formErrors.content ? 'border-red-500' : 'border-slate-700'
                   }`}
-                  placeholder="Boja podnjace, ramovi sa medom, leglo, matica, napomene..."
+                  placeholder="Unesite tekst za pretragu dnevnika"
                 />
                 {formErrors.content && (
                   <p className="text-red-400 text-xs mt-1">{formErrors.content}</p>

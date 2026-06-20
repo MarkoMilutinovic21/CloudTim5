@@ -111,6 +111,26 @@ function DashboardPage() {
         {role === 'Beekeeper' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
+              onClick={() => navigate('/beekeeper/apiaries')}
+              className="bg-slate-900 border border-slate-800 hover:border-green-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Pcelinjaci</h3>
+              <p className="text-slate-400 text-sm">
+                Dodavanje, izmena, brisanje i mapa mojih pcelinjaka
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/beekeeper/hives')}
+              className="bg-slate-900 border border-slate-800 hover:border-amber-500 rounded-xl p-6 cursor-pointer transition-colors"
+            >
+              <h3 className="text-white font-bold text-lg mb-1">Kosnice</h3>
+              <p className="text-slate-400 text-sm">
+                Kosnice po pcelinjaku i registracija pametne vage
+              </p>
+            </div>
+
+            <div
               onClick={() => navigate('/beekeeper/telemetry')}
               className="bg-slate-900 border border-slate-800 hover:border-yellow-500 rounded-xl p-6 cursor-pointer transition-colors"
             >

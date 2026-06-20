@@ -99,6 +99,8 @@ public class ApiaryRepository(IOptions<AzureTableOptions> options) : IApiaryRepo
             entity.Location,
             entity.Latitude,
             entity.Longitude,
+            entity.ImageUrl,
+            entity.ThumbnailUrl,
             Guid.Parse(entity.OwnerId),
             entity.CreatedAt);
     }
@@ -114,6 +116,8 @@ public class ApiaryRepository(IOptions<AzureTableOptions> options) : IApiaryRepo
             Location = apiary.Location,
             Latitude = apiary.Latitude,
             Longitude = apiary.Longitude,
+            ImageUrl = apiary.ImageUrl,
+            ThumbnailUrl = apiary.ThumbnailUrl,
             OwnerId = apiary.OwnerId.ToString(),
             CreatedAt = apiary.CreatedAt
         };

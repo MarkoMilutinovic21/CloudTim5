@@ -79,6 +79,9 @@ public class HiveRepository(IOptions<AzureTableOptions> options) : IHiveReposito
         return Hive.Rehydrate(
             Guid.Parse(entity.RowKey),
             entity.Name,
+            entity.HiveType,
+            entity.ExtensionColor,
+            entity.QueenAge,
             entity.Description,
             Guid.Parse(entity.ApiaryId),
             entity.CreatedAt);
@@ -91,6 +94,9 @@ public class HiveRepository(IOptions<AzureTableOptions> options) : IHiveReposito
             PartitionKey = hive.ApiaryId.ToString(),
             RowKey = hive.Id.ToString(),
             Name = hive.Name,
+            HiveType = hive.HiveType,
+            ExtensionColor = hive.ExtensionColor,
+            QueenAge = hive.QueenAge,
             Description = hive.Description,
             ApiaryId = hive.ApiaryId.ToString(),
             CreatedAt = hive.CreatedAt

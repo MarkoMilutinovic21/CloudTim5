@@ -22,6 +22,17 @@ interface DailyWeightDelta {
   deltaKg: number | null
 }
 
+interface ApiaryOption {
+  id: string
+  name: string
+}
+
+interface HiveOption {
+  id: string
+  name: string
+  apiaryId: string
+}
+
 const apiBaseUrl = 'http://localhost:5108/api'
 
 const defaultFromDate = () => {
@@ -33,6 +44,9 @@ const defaultFromDate = () => {
 const todayDate = () => new Date().toISOString().slice(0, 10)
 
 function TelemetryPage() {
+  const [apiaries, setApiaries] = useState<ApiaryOption[]>([])
+  const [hives, setHives] = useState<HiveOption[]>([])
+  const [apiaryId, setApiaryId] = useState(localStorage.getItem('telemetryApiaryId') ?? '')
   const [hiveId, setHiveId] = useState(localStorage.getItem('telemetryHiveId') ?? '')
   const [from, setFrom] = useState(defaultFromDate())
   const [to, setTo] = useState(todayDate())
@@ -45,11 +59,37 @@ function TelemetryPage() {
   const token = localStorage.getItem('token')
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
+  const fetchApiaries = async () => {
+    const response = await axios.get<ApiaryOption[]>(`${apiBaseUrl}/Apiaries`, { headers })
+    setApiaries(response.data)
+
+    const savedApiaryId = localStorage.getItem('telemetryApiaryId')
+    const initialApiaryId = savedApiaryId || response.data[0]?.id || ''
+
+    if (initialApiaryId) {
+      setApiaryId(initialApiaryId)
+      localStorage.setItem('telemetryApiaryId', initialApiaryId)
+      await fetchHives(initialApiaryId)
+    }
+  }
+
+  const fetchHives = async (selectedApiaryId: string) => {
+    const response = await axios.get<HiveOption[]>(`${apiBaseUrl}/Hives/${selectedApiaryId}`, { headers })
+    setHives(response.data)
+
+    const savedHiveId = localStorage.getItem('telemetryHiveId')
+    const savedHiveExists = response.data.some((hive) => hive.id === savedHiveId)
+    const initialHiveId = savedHiveExists ? savedHiveId! : response.data[0]?.id || ''
+
+    setHiveId(initialHiveId)
+    if (initialHiveId) localStorage.setItem('telemetryHiveId', initialHiveId)
+  }
+
   const fetchTelemetry = async () => {
     const trimmedHiveId = hiveId.trim()
 
     if (!trimmedHiveId) {
-      setError('HiveId je obavezan.')
+      setError('Izaberite kosnicu.')
       return
     }
 
@@ -97,11 +137,33 @@ function TelemetryPage() {
   }
 
   useEffect(() => {
-    if (hiveId.trim()) {
-      fetchTelemetry()
-    }
+    fetchApiaries().catch((err) => {
+      console.error('Hive options load failed:', err)
+      setError('Greska pri ucitavanju pcelinjaka i kosnica.')
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!hiveId.trim()) return
+    fetchTelemetry()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiveId])
+
+  const handleApiaryChange = async (nextApiaryId: string) => {
+    setApiaryId(nextApiaryId)
+    setHiveId('')
+    setHives([])
+    setLatest(null)
+    setMeasurements([])
+    setDailyDeltas([])
+    localStorage.setItem('telemetryApiaryId', nextApiaryId)
+    localStorage.removeItem('telemetryHiveId')
+
+    if (nextApiaryId) {
+      await fetchHives(nextApiaryId)
+    }
+  }
 
   return (
     <div className="min-h-screen app-shell p-8">
@@ -117,15 +179,36 @@ function TelemetryPage() {
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr_auto] gap-4 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto] gap-4 items-end">
             <div>
-              <label className="block text-slate-400 text-sm mb-2">HiveId</label>
-              <input
+              <label className="block text-slate-400 text-sm mb-2">Pcelinjak</label>
+              <select
+                value={apiaryId}
+                onChange={(event) => handleApiaryChange(event.target.value)}
+                className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
+              >
+                <option value="">Izaberite pcelinjak</option>
+                {apiaries.map((apiary) => (
+                  <option key={apiary.id} value={apiary.id}>
+                    {apiary.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-400 text-sm mb-2">Kosnica</label>
+              <select
                 value={hiveId}
                 onChange={(event) => setHiveId(event.target.value)}
                 className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-                placeholder="2db9dabe-0023-4ae1-bb44-dcaa0cd95cf7"
-              />
+              >
+                <option value="">Izaberite kosnicu</option>
+                {hives.map((hive) => (
+                  <option key={hive.id} value={hive.id}>
+                    {hive.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-slate-400 text-sm mb-2">Od</label>

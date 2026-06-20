@@ -18,6 +18,8 @@ public record ApiaryDto(
     string Location,
     double Latitude,
     double Longitude,
+    string ImageUrl,
+    string ThumbnailUrl,
     Guid OwnerId,
     DateTime CreatedAt);
 
@@ -29,7 +31,7 @@ public class GetApiaresQueryHandler(
         var apiaries = await apiaryRepository.GetByOwnerIdAsync(request.OwnerId, ct);
         return apiaries.Select(a => new ApiaryDto(
             a.Id, a.Name, a.Description, a.Location,
-            a.Latitude, a.Longitude, a.OwnerId, a.CreatedAt))
+            a.Latitude, a.Longitude, a.ImageUrl, a.ThumbnailUrl, a.OwnerId, a.CreatedAt))
             .ToList()
             .AsReadOnly();
     }

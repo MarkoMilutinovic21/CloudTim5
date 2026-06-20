@@ -30,6 +30,9 @@ public static class ServiceCollectionExtensions
         services.Configure<AzureTableOptions>(
             configuration.GetSection("AzureTableOptions"));
 
+        services.Configure<AzureBlobOptions>(
+            configuration.GetSection("AzureBlobOptions"));
+
         services.AddScoped<IApiaryRepository, ApiaryRepository>();
         services.AddScoped<IHiveRepository, HiveRepository>();
         services.AddScoped<IHiveJournalEntryRepository, HiveJournalEntryRepository>();
@@ -40,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBeekeeperAlertRepository, BeekeeperAlertRepository>();
 
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IApiaryImageStorage, ApiaryImageStorage>();
         services.AddScoped<ICropRepository, CropRepository>();
         services.AddScoped<ISprayingRecordRepository, SprayingRecordRepository>();
 

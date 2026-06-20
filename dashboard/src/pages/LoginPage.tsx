@@ -53,7 +53,7 @@ function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-            placeholder="admin@smartapiary.com"
+            placeholder="Unesite email adresu"
           />
         </div>
 

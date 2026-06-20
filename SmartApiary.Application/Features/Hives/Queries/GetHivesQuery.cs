@@ -9,23 +9,31 @@ namespace SmartApiary.Application.Features.Hives.Queries;
 using MediatR;
 using SmartApiary.Application.Common.Interfaces;
 
-public record GetHivesQuery(Guid ApiaryId) : IRequest<IReadOnlyCollection<HiveDto>>;
+public record GetHivesQuery(Guid ApiaryId, Guid OwnerId) : IRequest<IReadOnlyCollection<HiveDto>>;
 
 public record HiveDto(
     Guid Id,
     string Name,
+    string HiveType,
+    string ExtensionColor,
+    int QueenAge,
     string Description,
     Guid ApiaryId,
     DateTime CreatedAt);
 
 public class GetHivesQueryHandler(
-    IHiveRepository hiveRepository) : IRequestHandler<GetHivesQuery, IReadOnlyCollection<HiveDto>>
+    IHiveRepository hiveRepository,
+    IApiaryRepository apiaryRepository) : IRequestHandler<GetHivesQuery, IReadOnlyCollection<HiveDto>>
 {
     public async Task<IReadOnlyCollection<HiveDto>> Handle(GetHivesQuery request, CancellationToken ct)
     {
+        var apiary = await apiaryRepository.GetByIdAsync(request.ApiaryId, ct);
+        if (apiary is null) throw new Exception("Pčelinjak nije pronađen.");
+        if (apiary.OwnerId != request.OwnerId) throw new Exception("Nemate pristup ovom pčelinjaku.");
+
         var hives = await hiveRepository.GetByApiaryIdAsync(request.ApiaryId, ct);
         return hives.Select(h => new HiveDto(
-            h.Id, h.Name, h.Description, h.ApiaryId, h.CreatedAt))
+            h.Id, h.Name, h.HiveType, h.ExtensionColor, h.QueenAge, h.Description, h.ApiaryId, h.CreatedAt))
             .ToList()
             .AsReadOnly();
     }

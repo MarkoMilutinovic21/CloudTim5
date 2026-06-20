@@ -17,6 +17,8 @@ public record CreateApiaryCommand(
     string Location,
     double Latitude,
     double Longitude,
+    string ImageUrl,
+    string ThumbnailUrl,
     Guid OwnerId) : IRequest;
 
 public class CreateApiaryCommandValidator : AbstractValidator<CreateApiaryCommand>
@@ -41,6 +43,8 @@ public class CreateApiaryCommandHandler(
             request.Location,
             request.Latitude,
             request.Longitude,
+            request.ImageUrl,
+            request.ThumbnailUrl,
             request.OwnerId);
 
         await apiaryRepository.SaveAsync(apiary, ct);

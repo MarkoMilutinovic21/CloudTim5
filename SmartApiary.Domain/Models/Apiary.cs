@@ -10,11 +10,13 @@ using SmartApiary.Domain.Common;
 
 public class Apiary : AggregateRoot
 {
-    public string Name { get; private set; }
-    public string Description { get; private set; }
-    public string Location { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
+    public string Location { get; private set; } = string.Empty;
     public double Latitude { get; private set; }
     public double Longitude { get; private set; }
+    public string ImageUrl { get; private set; } = string.Empty;
+    public string ThumbnailUrl { get; private set; } = string.Empty;
     public Guid OwnerId { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
@@ -26,6 +28,8 @@ public class Apiary : AggregateRoot
         string location,
         double latitude,
         double longitude,
+        string imageUrl,
+        string thumbnailUrl,
         Guid ownerId)
     {
         return new Apiary
@@ -35,6 +39,8 @@ public class Apiary : AggregateRoot
             Location = location,
             Latitude = latitude,
             Longitude = longitude,
+            ImageUrl = imageUrl,
+            ThumbnailUrl = thumbnailUrl,
             OwnerId = ownerId,
             CreatedAt = DateTime.UtcNow
         };
@@ -47,6 +53,8 @@ public class Apiary : AggregateRoot
         string location,
         double latitude,
         double longitude,
+        string imageUrl,
+        string thumbnailUrl,
         Guid ownerId,
         DateTime createdAt)
     {
@@ -58,17 +66,28 @@ public class Apiary : AggregateRoot
             Location = location,
             Latitude = latitude,
             Longitude = longitude,
+            ImageUrl = imageUrl,
+            ThumbnailUrl = thumbnailUrl,
             OwnerId = ownerId,
             CreatedAt = createdAt
         };
     }
 
-    public void Update(string name, string description, string location, double latitude, double longitude)
+    public void Update(
+        string name,
+        string description,
+        string location,
+        double latitude,
+        double longitude,
+        string imageUrl,
+        string thumbnailUrl)
     {
         Name = name;
         Description = description;
         Location = location;
         Latitude = latitude;
         Longitude = longitude;
+        ImageUrl = imageUrl;
+        ThumbnailUrl = thumbnailUrl;
     }
 }

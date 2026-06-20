@@ -15,6 +15,8 @@ import HiveJournalPage from './pages/HiveJournalPage'
 import AlertsPage from './pages/AlertsPage'
 import SprayingRecordsPage from './pages/SprayingRecordsPage'
 import CropsPage from './pages/CropsPage'
+import ApiariesPage from './pages/ApiariesPage'
+import HivesPage from './pages/HivesPage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -47,6 +49,14 @@ function App() {
         <Route
           path="/beekeeper/telemetry"
           element={token ? <TelemetryPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/beekeeper/apiaries"
+          element={token ? <ApiariesPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/beekeeper/hives"
+          element={token ? <HivesPage /> : <Navigate to="/login" />}
         />
         <Route
           path="/beekeeper/crops"
