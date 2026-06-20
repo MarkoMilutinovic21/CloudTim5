@@ -95,32 +95,32 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await context.Database.MigrateAsync();
 
-    if (!context.Users.Any(u => u.Email == "admin@smartapiary.com"))
+    var adminUser = context.Users.FirstOrDefault(u => u.Email == "admin@smartapiary.com");
+    if (adminUser is null)
     {
-        var admin = User.Create(
-            "Admin", "Admin", "admin@smartapiary.com",
+        adminUser = User.Create("Admin", "Admin", "admin@smartapiary.com",
             BCrypt.Net.BCrypt.HashPassword("Admin123!"), UserRoles.Admin);
-        admin.Activate();
-        context.Users.Add(admin);
+        context.Users.Add(adminUser);
     }
+    if (!adminUser.IsActive) adminUser.Activate();
 
-    if (!context.Users.Any(u => u.Email == "farmer@test.com"))
+    var farmerUser = context.Users.FirstOrDefault(u => u.Email == "farmer@test.com");
+    if (farmerUser is null)
     {
-        var farmer = User.Create(
-            "Test", "Farmer", "farmer@test.com",
+        farmerUser = User.Create("Test", "Farmer", "farmer@test.com",
             BCrypt.Net.BCrypt.HashPassword("Farmer123!"), UserRoles.Farmer);
-        farmer.Activate();
-        context.Users.Add(farmer);
+        context.Users.Add(farmerUser);
     }
+    if (!farmerUser.IsActive) farmerUser.Activate();
 
-    if (!context.Users.Any(u => u.Email == "beekeeper@test.com"))
+    var beekeeperUser = context.Users.FirstOrDefault(u => u.Email == "beekeeper@test.com");
+    if (beekeeperUser is null)
     {
-        var beekeeper = User.Create(
-            "Test", "Beekeeper", "beekeeper@test.com",
+        beekeeperUser = User.Create("Test", "Beekeeper", "beekeeper@test.com",
             BCrypt.Net.BCrypt.HashPassword("Beekeeper123!"), UserRoles.Beekeeper);
-        beekeeper.Activate();
-        context.Users.Add(beekeeper);
+        context.Users.Add(beekeeperUser);
     }
+    if (!beekeeperUser.IsActive) beekeeperUser.Activate();
 
     await context.SaveChangesAsync();
 }

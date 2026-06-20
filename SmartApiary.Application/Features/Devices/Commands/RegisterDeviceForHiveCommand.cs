@@ -1,5 +1,6 @@
 namespace SmartApiary.Application.Features.Devices.Commands;
 
+using System.Security.Cryptography;
 using FluentValidation;
 using MediatR;
 using SmartApiary.Application.Common.Interfaces;
@@ -15,6 +16,8 @@ public record RegisterDeviceForHiveResult(
     Guid DeviceId,
     Guid HiveId,
     string SerialNumber,
+    Guid DeviceUuid,
+    string DeviceToken,
     string Status);
 
 public class RegisterDeviceForHiveCommandValidator : AbstractValidator<RegisterDeviceForHiveCommand>
@@ -59,13 +62,20 @@ public class RegisterDeviceForHiveCommandHandler(
         if (existingByHive is not null)
             throw new Exception("Za ovu košnicu je uređaj već registrovan.");
 
+        var deviceUuid = Guid.NewGuid();
+        var deviceToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
         Device device = Device.Create(request.SerialNumber, request.HiveId);
+        device.Pair(deviceUuid, deviceToken);
+
         await deviceRepository.SaveAsync(device, ct);
 
         return new RegisterDeviceForHiveResult(
             device.Id,
             device.HiveId,
             device.SerialNumber,
+            deviceUuid,
+            deviceToken,
             device.Status);
     }
 }

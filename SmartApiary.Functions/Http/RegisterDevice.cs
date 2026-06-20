@@ -82,6 +82,7 @@ public class RegisterDevice(
             DeviceId = device.Id,
             HiveId = device.HiveId,
             SerialNumber = device.SerialNumber,
+            DeviceUuid = device.DeviceUuid,
             Status = device.Status,
             DeviceToken = device.DeviceToken
         };

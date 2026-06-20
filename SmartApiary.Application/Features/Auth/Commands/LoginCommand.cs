@@ -34,6 +34,9 @@ public class LoginCommandHandler(
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid email or password.");
 
+        if (!user.IsActive)
+            throw new UnauthorizedAccessException("Nalog je suspendovan ili nije aktiviran.");
+
         var token = jwtService.GenerateToken(user);
 
         return new LoginResult(token, user.Role, $"{user.FirstName} {user.LastName}");
