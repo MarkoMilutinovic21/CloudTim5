@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
+import * as signalR from '@microsoft/signalr'
 import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
 interface TelemetryMeasurement {
@@ -34,6 +35,7 @@ interface HiveOption {
 }
 
 const apiBaseUrl = 'http://localhost:5108/api'
+const hubUrl = 'http://localhost:5108/telemetryhub'
 
 const defaultFromDate = () => {
   const date = new Date()
@@ -56,8 +58,54 @@ function TelemetryPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const connectionRef = useRef<signalR.HubConnection | null>(null)
+  const joinedHiveRef = useRef<string>('')
+  const [signalRReady, setSignalRReady] = useState(false)
+
   const token = localStorage.getItem('token')
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
+
+  // Pokreni SignalR konekciju jednom
+  useEffect(() => {
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(hubUrl)
+      .withAutomaticReconnect()
+      .build()
+
+    connection.on('NewMeasurement', (m: TelemetryMeasurement) => {
+      setLatest(m)
+      setMeasurements(prev => prev.some(x => x.id === m.id) ? prev : [m, ...prev])
+    })
+
+    connection.start()
+      .then(() => {
+        connectionRef.current = connection
+        setSignalRReady(true)
+      })
+      .catch(err => console.warn('[SignalR] Konekcija nije uspostavljena:', err))
+
+    return () => {
+      connection.stop()
+    }
+  }, [])
+
+  // Promijeni grupu kada se promijeni kosnica
+  useEffect(() => {
+    if (!signalRReady || !hiveId.trim()) return
+
+    const conn = connectionRef.current
+    if (!conn) return
+
+    const changeGroup = async () => {
+      if (joinedHiveRef.current && joinedHiveRef.current !== hiveId) {
+        await conn.invoke('LeaveHiveGroup', joinedHiveRef.current).catch(() => {})
+      }
+      await conn.invoke('JoinHiveGroup', hiveId).catch(() => {})
+      joinedHiveRef.current = hiveId
+    }
+
+    changeGroup()
+  }, [hiveId, signalRReady])
 
   const fetchApiaries = async () => {
     const response = await axios.get<ApiaryOption[]>(`${apiBaseUrl}/Apiaries`, { headers })

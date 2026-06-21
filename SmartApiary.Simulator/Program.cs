@@ -40,6 +40,24 @@ Guid deviceUuid = state?.DeviceUuid ?? settings.DeviceUuid.GetValueOrDefault(Gui
 
 PrintHeader(settings, hiveId, deviceUuid);
 
+// Ako je token vec konfigurisan u appsettings.json (uredjaj uparen sa fronta), preskoci registraciju
+if (state is null && !string.IsNullOrWhiteSpace(settings.DeviceToken))
+{
+    if (!settings.HiveId.HasValue || !settings.DeviceUuid.HasValue)
+        throw new InvalidOperationException("HiveId i DeviceUuid moraju biti postavljeni uz DeviceToken.");
+
+    state = new SimulatorState
+    {
+        SerialNumber = settings.SerialNumber,
+        DeviceId = Guid.Empty,
+        HiveId = settings.HiveId.Value,
+        DeviceUuid = settings.DeviceUuid.Value,
+        DeviceToken = settings.DeviceToken
+    };
+
+    Console.WriteLine("[CONFIG] Token ucitan iz appsettings.json — preskace registraciju i handshake.");
+}
+
 try
 {
     if (state is null)

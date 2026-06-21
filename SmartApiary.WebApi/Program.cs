@@ -12,6 +12,8 @@ using SmartApiary.Infrastructure.Persistence;
 using Microsoft.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
+using SmartApiary.WebApi.Hubs;
+using SmartApiary.WebApi.Services;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -71,10 +73,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddSignalR();
+builder.Services.AddHostedService<TelemetryBroadcastService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
+    options.AddPolicy("SignalR", policy =>
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -89,6 +100,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<TelemetryHub>("/telemetryhub").RequireCors("SignalR");
 
 using (var scope = app.Services.CreateScope())
 {

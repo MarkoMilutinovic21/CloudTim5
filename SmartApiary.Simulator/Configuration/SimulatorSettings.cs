@@ -6,6 +6,7 @@ public class SimulatorSettings
     public string SerialNumber { get; set; } = "SA-2026-12345";
     public Guid? DeviceUuid { get; set; }
     public Guid? HiveId { get; set; }
+    public string? DeviceToken { get; set; }
     public int DelaySeconds { get; set; } = 5;
     public double InitialWeightKg { get; set; } = 42.5;
     public double WeightVariationKg { get; set; } = 0.35;
