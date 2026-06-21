@@ -55,6 +55,24 @@ const markerIcon = new L.Icon({
   iconAnchor: [12, 41],
 })
 
+const parcelIcon = (cropName: string) => {
+  if (!cropName) return markerIcon
+  const normalized = cropName.toLocaleLowerCase('sr-RS')
+  const symbol = normalized.includes('suncokret')
+    ? '🌻'
+    : normalized.includes('lavand')
+      ? '🪻'
+      : normalized.includes('repic')
+        ? '🌼'
+        : '🌱'
+  return L.divIcon({
+    html: `<span style="font-size:30px;filter:drop-shadow(0 2px 2px #111)">${symbol}</span>`,
+    className: '',
+    iconSize: [34, 40],
+    iconAnchor: [17, 36],
+  })
+}
+
 function ParcelsPage() {
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [form, setForm] = useState<ParcelForm>(emptyForm)
@@ -86,11 +104,12 @@ function ParcelsPage() {
       })
 
       setParcels(response.data)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Greška pri učitavanju parcela:', err)
 
-      if (err.response) {
-        setError(`Greška pri učitavanju parcela. Status: ${err.response.status}`)
+      if (response) {
+        setError(`Greška pri učitavanju parcela. Status: ${response.status}`)
       } else {
         setError('Greška pri učitavanju parcela. Backend nije dostupan.')
       }
@@ -101,6 +120,8 @@ function ParcelsPage() {
 
   useEffect(() => {
     fetchParcels()
+    // Initial load only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -165,11 +186,12 @@ function ParcelsPage() {
       setForm(emptyForm)
       setEditingId(null)
       await fetchParcels()
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Greška pri čuvanju parcele:', err)
 
-      if (err.response) {
-        setError(`Greška pri čuvanju parcele. Status: ${err.response.status}`)
+      if (response) {
+        setError(`Greška pri čuvanju parcele. Status: ${response.status}`)
       } else {
         setError('Greška pri čuvanju parcele. Backend nije dostupan.')
       }
@@ -207,11 +229,12 @@ function ParcelsPage() {
       await axios.delete(`http://localhost:5108/api/Parcels/${id}`, { headers })
       setSuccess('Parcela je uspešno obrisana.')
       await fetchParcels()
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Greška pri brisanju parcele:', err)
 
-      if (err.response) {
-        setError(`Greška pri brisanju parcele. Status: ${err.response.status}`)
+      if (response) {
+        setError(`Greška pri brisanju parcele. Status: ${response.status}`)
       } else {
         setError('Greška pri brisanju parcele. Backend nije dostupan.')
       }
@@ -521,7 +544,7 @@ function ParcelsPage() {
                     <Marker
                       key={parcel.id}
                       position={[parcel.latitude, parcel.longitude]}
-                      icon={markerIcon}
+                      icon={parcelIcon(parcel.cropName)}
                     >
                       <Popup>
                         <strong>{parcel.name}</strong>

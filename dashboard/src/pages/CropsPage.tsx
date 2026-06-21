@@ -94,6 +94,8 @@ function CropsPage() {
 
   useEffect(() => {
     fetchParcels()
+    // Initial load only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) {

@@ -68,7 +68,7 @@ function TelemetryPage() {
   // Pokreni SignalR konekciju jednom
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl)
+      .withUrl(hubUrl, { accessTokenFactory: () => token ?? '' })
       .withAutomaticReconnect()
       .build()
 
@@ -82,12 +82,12 @@ function TelemetryPage() {
         connectionRef.current = connection
         setSignalRReady(true)
       })
-      .catch(err => console.warn('[SignalR] Konekcija nije uspostavljena:', err))
+      .catch((err: unknown) => console.warn('[SignalR] Konekcija nije uspostavljena:', err))
 
     return () => {
       connection.stop()
     }
-  }, [])
+  }, [token])
 
   // Promijeni grupu kada se promijeni kosnica
   useEffect(() => {
@@ -164,18 +164,19 @@ function TelemetryPage() {
       setLatest(latestResponse.data)
       setMeasurements(measurementsResponse.data)
       setDailyDeltas(deltaResponse.data)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Telemetry load failed:', err)
 
-      if (err.response?.status === 404) {
+      if (response?.status === 404) {
         setLatest(null)
         setMeasurements([])
         setDailyDeltas([])
         setError('Nema merenja za ovu kosnicu.')
-      } else if (err.response?.status === 401 || err.response?.status === 403) {
+      } else if (response?.status === 401 || response?.status === 403) {
         setError('Nemate pristup telemetriji. Prijavite se kao pcelar.')
-      } else if (err.response) {
-        setError(`Greska pri ucitavanju telemetrije. Status: ${err.response.status}`)
+      } else if (response) {
+        setError(`Greska pri ucitavanju telemetrije. Status: ${response.status}`)
       } else {
         setError('Backend nije dostupan.')
       }
@@ -228,20 +229,22 @@ function TelemetryPage() {
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto] gap-4 items-end">
-            <div>
-              <label className="block text-slate-400 text-sm mb-2">Pcelinjak</label>
-              <select
-                value={apiaryId}
-                onChange={(event) => handleApiaryChange(event.target.value)}
-                className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-              >
-                <option value="">Izaberite pcelinjak</option>
+            <div className="lg:col-span-2">
+              <label className="block text-slate-400 text-sm mb-2">Pčelinjak</label>
+              <div className="flex flex-wrap gap-2">
                 {apiaries.map((apiary) => (
-                  <option key={apiary.id} value={apiary.id}>
+                  <button
+                    key={apiary.id}
+                    type="button"
+                    onClick={() => handleApiaryChange(apiary.id)}
+                    className={apiaryId === apiary.id
+                      ? 'rounded bg-yellow-500 px-4 py-3 font-bold text-slate-950'
+                      : 'rounded border border-slate-700 bg-slate-800 px-4 py-3 text-slate-200'}
+                  >
                     {apiary.name}
-                  </option>
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
             <div>
               <label className="block text-slate-400 text-sm mb-2">Kosnica</label>
@@ -380,23 +383,30 @@ function DeltaChart({ deltas }: { deltas: DailyWeightDelta[] }) {
   const maxAbs = Math.max(...visible.map((item) => Math.abs(item.deltaKg ?? 0)), 1)
 
   return (
-    <div className="h-72 bg-slate-950 rounded-lg p-4 flex items-end gap-3 overflow-x-auto">
+    <div className="relative h-72 bg-slate-950 rounded-lg p-4 flex gap-3 overflow-x-auto">
+      <div className="pointer-events-none absolute left-4 right-4 top-1/2 border-t border-slate-600" />
       {visible.map((item) => {
         const delta = item.deltaKg ?? 0
         const height = Math.max(12, (Math.abs(delta) / maxAbs) * 190)
         const isPositive = delta >= 0
 
         return (
-          <div key={item.date} className="h-full min-w-16 flex flex-col justify-end items-center gap-2">
-            <span className={isPositive ? 'text-green-300 text-xs' : 'text-red-300 text-xs'}>
-              {delta.toFixed(2)}
-            </span>
+          <div key={item.date} className="relative h-full min-w-16">
             <div
-              className={isPositive ? 'w-8 bg-green-500 rounded-t' : 'w-8 bg-red-500 rounded-t'}
-              style={{ height }}
+              className={isPositive
+                ? 'absolute bottom-1/2 left-1/2 w-8 -translate-x-1/2 bg-green-500 rounded-t'
+                : 'absolute top-1/2 left-1/2 w-8 -translate-x-1/2 bg-red-500 rounded-b'}
+              style={{ height: height / 2 }}
               title={`${formatDate(item.date)}: ${delta.toFixed(2)} kg`}
             />
-            <span className="text-slate-500 text-xs">{formatDate(item.date)}</span>
+            <span className={isPositive
+              ? 'absolute bottom-[52%] left-1/2 -translate-x-1/2 text-green-300 text-xs'
+              : 'absolute top-[52%] left-1/2 -translate-x-1/2 text-red-300 text-xs'}>
+              {delta.toFixed(2)}
+            </span>
+            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-slate-500 text-xs">
+              {formatDate(item.date)}
+            </span>
           </div>
         )
       })}

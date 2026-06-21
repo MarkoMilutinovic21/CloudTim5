@@ -46,7 +46,6 @@ function HivesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deviceHiveId, setDeviceHiveId] = useState('')
   const [serialNumber, setSerialNumber] = useState('')
-  const [registeredToken, setRegisteredToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -83,9 +82,10 @@ function HivesPage() {
 
     try {
       await fetchApiaries()
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Hives page load failed:', err)
-      setError(err.response ? `Greska pri ucitavanju. Status: ${err.response.status}` : 'Backend nije dostupan.')
+      setError(response ? `Greska pri ucitavanju. Status: ${response.status}` : 'Backend nije dostupan.')
     } finally {
       setLoading(false)
     }
@@ -153,9 +153,10 @@ function HivesPage() {
       setForm(emptyHiveForm)
       setEditingId(null)
       await fetchHives()
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Hive save failed:', err)
-      setError(err.response ? `Greska pri cuvanju kosnice. Status: ${err.response.status}` : 'Backend nije dostupan.')
+      setError(response ? `Greska pri cuvanju kosnice. Status: ${response.status}` : 'Backend nije dostupan.')
     } finally {
       setSaving(false)
     }
@@ -181,9 +182,10 @@ function HivesPage() {
       await axios.delete(`${apiBase}/Hives/${selectedApiaryId}/${hiveId}`, { headers })
       setSuccess('Kosnica je obrisana.')
       await fetchHives()
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Hive delete failed:', err)
-      setError(err.response ? `Greska pri brisanju kosnice. Status: ${err.response.status}` : 'Backend nije dostupan.')
+      setError(response ? `Greska pri brisanju kosnice. Status: ${response.status}` : 'Backend nije dostupan.')
     }
   }
 
@@ -201,25 +203,25 @@ function HivesPage() {
     }
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${apiBase}/Hives/${selectedApiaryId}/${deviceHiveId}/devices`,
         { serialNumber: serialNumber.trim() },
         { headers }
       )
 
       setSerialNumber('')
-      setRegisteredToken(response.data.deviceToken)
-      setSuccess('Uredjaj je uspesno registrovan i uparen.')
+      setSuccess('Uredjaj je registrovan. Pokrenite uredjaj ili simulator da zavrsi handshake.')
       setError('')
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Device register failed:', err)
       setError(
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        (err.response ? `Greska pri registraciji uredjaja. Status: ${err.response.status}` : 'Backend nije dostupan.')
+        response?.data?.message ||
+        response?.data?.error ||
+        response?.data?.title ||
+        (response ? `Greska pri registraciji uredjaja. Status: ${response.status}` : 'Backend nije dostupan.')
       )
       setSuccess('')
-      setRegisteredToken(null)
     }
   }
 
@@ -248,20 +250,6 @@ function HivesPage() {
 
         {error && <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded mb-4 text-sm">{error}</div>}
         {success && <div className="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded mb-4 text-sm">{success}</div>}
-
-        {registeredToken && (
-          <div className="bg-blue-900/50 border border-blue-600 text-blue-200 px-4 py-4 rounded mb-4 text-sm">
-            <p className="font-bold mb-2">Token uređaja — sačuvaj ga, više se neće prikazati:</p>
-            <code className="block bg-slate-900 px-3 py-2 rounded text-xs break-all text-yellow-300 select-all">{registeredToken}</code>
-            <p className="mt-2 text-slate-400 text-xs">Koristi ovaj token kao <code>X-Device-Token</code> header pri slanju telemetrije na Functions endpoint.</p>
-            <button
-              onClick={() => setRegisteredToken(null)}
-              className="mt-3 text-xs text-blue-400 hover:text-blue-300 underline"
-            >
-              Zatvori
-            </button>
-          </div>
-        )}
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
           <label className="block text-slate-400 text-sm mb-2">Pcelinjak</label>

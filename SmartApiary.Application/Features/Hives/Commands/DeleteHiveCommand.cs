@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,12 +18,12 @@ public class DeleteHiveCommandHandler(
     public async Task Handle(DeleteHiveCommand request, CancellationToken ct)
     {
         var apiary = await apiaryRepository.GetByIdAsync(request.ApiaryId, ct);
-        if (apiary is null) throw new Exception("Pčelinjak nije pronađen.");
-        if (apiary.OwnerId != request.OwnerId) throw new Exception("Nemate pristup ovom pčelinjaku.");
+        if (apiary is null) throw new KeyNotFoundException("Pčelinjak nije pronađen.");
+        if (apiary.OwnerId != request.OwnerId) throw new UnauthorizedAccessException("Nemate pristup ovom pčelinjaku.");
 
         var hive = await hiveRepository.GetByIdAsync(request.HiveId, ct);
-        if (hive is null) throw new Exception("Košnica nije pronađena.");
-        if (hive.ApiaryId != request.ApiaryId) throw new Exception("Košnica ne pripada ovom pčelinjaku.");
+        if (hive is null) throw new KeyNotFoundException("Košnica nije pronađena.");
+        if (hive.ApiaryId != request.ApiaryId) throw new UnauthorizedAccessException("Košnica ne pripada ovom pčelinjaku.");
         await hiveRepository.DeleteAsync(hive, ct);
     }
 }

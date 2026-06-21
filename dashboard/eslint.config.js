@@ -18,5 +18,9 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Initial API hydration intentionally updates local component state from effects.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

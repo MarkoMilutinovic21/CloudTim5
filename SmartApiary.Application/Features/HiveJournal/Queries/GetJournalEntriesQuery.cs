@@ -3,7 +3,7 @@ namespace SmartApiary.Application.Features.HiveJournal.Queries;
 using MediatR;
 using SmartApiary.Application.Common.Interfaces;
 
-public record GetJournalEntriesQuery(Guid HiveId) : IRequest<IReadOnlyCollection<JournalEntryDto>>;
+public record GetJournalEntriesQuery(Guid HiveId, Guid BeekeeperId) : IRequest<IReadOnlyCollection<JournalEntryDto>>;
 
 public record JournalEntryDto(
     Guid Id,
@@ -20,17 +20,17 @@ public record JournalEntryDto(
 
 public class GetJournalEntriesQueryHandler(
     IHiveRepository hiveRepository,
-    IDeviceRepository deviceRepository,
+    IApiaryRepository apiaryRepository,
     IHiveJournalEntryRepository journalRepository) : IRequestHandler<GetJournalEntriesQuery, IReadOnlyCollection<JournalEntryDto>>
 {
     public async Task<IReadOnlyCollection<JournalEntryDto>> Handle(GetJournalEntriesQuery request, CancellationToken ct)
     {
         var hive = await hiveRepository.GetByIdAsync(request.HiveId, ct);
-        var device = hive is null
-            ? await deviceRepository.GetByHiveIdAsync(request.HiveId, ct)
-            : null;
+        if (hive is null) throw new KeyNotFoundException("Košnica nije pronađena.");
 
-        if (hive is null && device is null) throw new Exception("Kosnica nije pronadjena.");
+        var apiary = await apiaryRepository.GetByIdAsync(hive.ApiaryId, ct);
+        if (apiary is null || apiary.OwnerId != request.BeekeeperId)
+            throw new UnauthorizedAccessException("Nemate pristup ovoj košnici.");
 
         var entries = await journalRepository.GetByHiveIdAsync(request.HiveId, ct);
 

@@ -26,31 +26,11 @@ public class RegisterDevice(
         if (string.IsNullOrWhiteSpace(request.SerialNumber))
             return new BadRequestObjectResult(new { error = "SerialNumber is required." });
 
+        if (!request.DeviceUuid.HasValue || request.DeviceUuid.Value == Guid.Empty)
+            return new BadRequestObjectResult(new { error = "DeviceUuid is required for handshake." });
+
         Device? existing = await deviceRepository.GetBySerialNumberAsync(request.SerialNumber, ct);
-
-        if (request.DeviceUuid.HasValue)
-            return await PairDeviceAsync(request, existing, ct);
-
-        if (!request.HiveId.HasValue || request.HiveId.Value == Guid.Empty)
-            return new BadRequestObjectResult(new { error = "HiveId is required for device registration." });
-
-        if (existing is not null)
-            return new ConflictObjectResult(new { error = "Device with this serial number is already registered." });
-
-        try
-        {
-            Device device = Device.Create(request.SerialNumber, request.HiveId.Value);
-            await deviceRepository.SaveAsync(device, ct);
-
-            logger.LogInformation("Device {SerialNumber} registered for hive {HiveId}.",
-                device.SerialNumber, device.HiveId);
-
-            return new OkObjectResult(ToResponse(device));
-        }
-        catch (ArgumentException ex)
-        {
-            return new BadRequestObjectResult(new { error = ex.Message });
-        }
+        return await PairDeviceAsync(request, existing, ct);
     }
 
     private async Task<IActionResult> PairDeviceAsync(

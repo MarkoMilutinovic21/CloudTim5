@@ -3,7 +3,7 @@ namespace SmartApiary.Application.Features.HiveJournal.Queries;
 using MediatR;
 using SmartApiary.Application.Common.Interfaces;
 
-public record GetJournalHiveOptionsQuery : IRequest<IReadOnlyCollection<JournalHiveOptionDto>>;
+public record GetJournalHiveOptionsQuery(Guid BeekeeperId) : IRequest<IReadOnlyCollection<JournalHiveOptionDto>>;
 
 public record JournalHiveOptionDto(
     Guid HiveId,
@@ -12,11 +12,17 @@ public record JournalHiveOptionDto(
 
 public class GetJournalHiveOptionsQueryHandler(
     IHiveRepository hiveRepository,
-    IDeviceRepository deviceRepository) : IRequestHandler<GetJournalHiveOptionsQuery, IReadOnlyCollection<JournalHiveOptionDto>>
+    IDeviceRepository deviceRepository,
+    IApiaryRepository apiaryRepository) : IRequestHandler<GetJournalHiveOptionsQuery, IReadOnlyCollection<JournalHiveOptionDto>>
 {
     public async Task<IReadOnlyCollection<JournalHiveOptionDto>> Handle(GetJournalHiveOptionsQuery request, CancellationToken ct)
     {
-        var hives = await hiveRepository.GetAllAsync(ct);
+        var apiaries = await apiaryRepository.GetByOwnerIdAsync(request.BeekeeperId, ct);
+        HashSet<Guid> ownedApiaryIds = apiaries.Select(apiary => apiary.Id).ToHashSet();
+        var hives = (await hiveRepository.GetAllAsync(ct))
+            .Where(hive => ownedApiaryIds.Contains(hive.ApiaryId))
+            .ToList();
+        HashSet<Guid> ownedHiveIds = hives.Select(hive => hive.Id).ToHashSet();
         var devices = await deviceRepository.GetAllAsync(ct);
 
         var options = hives
@@ -24,7 +30,7 @@ public class GetJournalHiveOptionsQueryHandler(
                 hive.Id,
                 string.IsNullOrWhiteSpace(hive.Name) ? hive.Id.ToString() : $"{hive.Name} ({hive.Id})",
                 "Hive"))
-            .Concat(devices.Select(device => new JournalHiveOptionDto(
+            .Concat(devices.Where(device => ownedHiveIds.Contains(device.HiveId)).Select(device => new JournalHiveOptionDto(
                 device.HiveId,
                 string.IsNullOrWhiteSpace(device.SerialNumber)
                     ? device.HiveId.ToString()

@@ -11,6 +11,7 @@ public record PesticideTreatmentNotificationStatusOverviewDto(
     int TotalTreatments,
     int ScheduledTreatments,
     int CancelledTreatments,
+    int CompletedTreatments,
     int TotalNotifiedBeekeepers,
     IReadOnlyCollection<PesticideTreatmentNotificationStatusDto> Items);
 
@@ -63,6 +64,7 @@ public class GetPesticideTreatmentNotificationStatusesQueryHandler(
             treatments.Count,
             treatments.Count(x => x.Status == PesticideTreatmentStatuses.Scheduled),
             treatments.Count(x => x.Status == PesticideTreatmentStatuses.Cancelled),
+            treatments.Count(x => x.Status == PesticideTreatmentStatuses.Completed),
             treatments.Sum(x => x.NotifiedBeekeepersCount),
             items.AsReadOnly());
     }

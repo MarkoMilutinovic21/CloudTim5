@@ -70,11 +70,12 @@ function HiveJournalPage() {
       setEntries(response.data)
       setHiveId(trimmedHiveId)
       setPage(1)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Journal load failed:', err)
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      if (response?.status === 401 || response?.status === 403) {
         setError('Nemate pristup dnevniku. Prijavite se kao pcelar.')
-      } else if (err.response?.status === 404) {
+      } else if (response?.status === 404) {
         setEntries([])
         setError('Kosnica nije pronadjena.')
       } else {

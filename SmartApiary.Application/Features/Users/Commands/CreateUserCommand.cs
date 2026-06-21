@@ -46,6 +46,6 @@ public class CreateUserCommandHandler(
             request.Phone);
 
         await userRepository.SaveAsync(user, ct);
-        await emailService.SendActivationEmailAsync(user.Email, user.ActivationToken, ct);
+        await emailService.SendActivationEmailAsync(user.Email, user.ActivationToken!, ct);
     }
 }

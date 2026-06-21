@@ -16,7 +16,7 @@ public class TelemetryMeasurementRepository(IOptions<AzureTableOptions> options)
     public async Task SaveAsync(TelemetryMeasurement measurement, CancellationToken ct = default)
     {
         await _tableClient.CreateIfNotExistsAsync(ct);
-        await _tableClient.AddEntityAsync(MapToEntity(measurement), ct);
+        await _tableClient.UpsertEntityAsync(MapToEntity(measurement), TableUpdateMode.Replace, ct);
     }
 
     public async Task<TelemetryMeasurement?> GetLatestForHiveAsync(Guid hiveId, CancellationToken ct = default)
@@ -55,6 +55,8 @@ public class TelemetryMeasurementRepository(IOptions<AzureTableOptions> options)
         }
 
         return results
+            .GroupBy(m => new { m.DeviceUuid, m.MeasuredAt })
+            .Select(group => group.OrderByDescending(m => m.ReceivedAt).First())
             .OrderBy(m => m.MeasuredAt)
             .ToList()
             .AsReadOnly();
@@ -62,11 +64,17 @@ public class TelemetryMeasurementRepository(IOptions<AzureTableOptions> options)
 
     private static TelemetryMeasurement MapToDomain(TelemetryMeasurementEntity entity)
     {
+        Guid deviceUuid = Guid.Parse(entity.DeviceUuid);
+        Guid storedId = Guid.Parse(entity.RowKey.Split('|')[1]);
+        Guid measurementId = storedId == deviceUuid
+            ? CreateStableMeasurementId(deviceUuid, entity.MeasuredAt)
+            : storedId;
+
         return TelemetryMeasurement.Load(
-            Guid.Parse(entity.RowKey.Split('|')[1]),
+            measurementId,
             Guid.Parse(entity.DeviceId),
             Guid.Parse(entity.HiveId),
-            Guid.Parse(entity.DeviceUuid),
+            deviceUuid,
             entity.WeightKg,
             entity.TemperatureC,
             entity.HumidityPercent,
@@ -80,7 +88,7 @@ public class TelemetryMeasurementRepository(IOptions<AzureTableOptions> options)
         return new TelemetryMeasurementEntity
         {
             PartitionKey = measurement.HiveId.ToString(),
-            RowKey = $"{measurement.MeasuredAt.Ticks:D19}|{measurement.Id}",
+            RowKey = $"{measurement.MeasuredAt.Ticks:D19}|{CreateStableMeasurementId(measurement.DeviceUuid, measurement.MeasuredAt)}",
             DeviceId = measurement.DeviceId.ToString(),
             HiveId = measurement.HiveId.ToString(),
             DeviceUuid = measurement.DeviceUuid.ToString(),
@@ -91,5 +99,16 @@ public class TelemetryMeasurementRepository(IOptions<AzureTableOptions> options)
             MeasuredAt = measurement.MeasuredAt,
             ReceivedAt = measurement.ReceivedAt
         };
+    }
+
+    private static Guid CreateStableMeasurementId(Guid deviceUuid, DateTime measuredAt)
+    {
+        byte[] idBytes = deviceUuid.ToByteArray();
+        byte[] ticksBytes = BitConverter.GetBytes(measuredAt.ToUniversalTime().Ticks);
+
+        for (int i = 0; i < ticksBytes.Length; i++)
+            idBytes[i] ^= ticksBytes[i];
+
+        return new Guid(idBytes);
     }
 }

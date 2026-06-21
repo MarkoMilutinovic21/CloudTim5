@@ -35,10 +35,10 @@ public class UpdateApiaryCommandHandler(
         var apiary = await apiaryRepository.GetByIdAsync(request.ApiaryId, ct);
 
         if (apiary is null)
-            throw new Exception("Pčelinjak nije pronađen.");
+            throw new KeyNotFoundException("Pčelinjak nije pronađen.");
 
         if (apiary.OwnerId != request.OwnerId)
-            throw new Exception("Nemate pristup ovom pčelinjaku.");
+            throw new UnauthorizedAccessException("Nemate pristup ovom pčelinjaku.");
 
         apiary.Update(
             request.Name,

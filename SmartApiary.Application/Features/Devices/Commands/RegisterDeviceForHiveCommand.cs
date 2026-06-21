@@ -1,6 +1,5 @@
 namespace SmartApiary.Application.Features.Devices.Commands;
 
-using System.Security.Cryptography;
 using FluentValidation;
 using MediatR;
 using SmartApiary.Application.Common.Interfaces;
@@ -16,8 +15,8 @@ public record RegisterDeviceForHiveResult(
     Guid DeviceId,
     Guid HiveId,
     string SerialNumber,
-    Guid DeviceUuid,
-    string DeviceToken,
+    Guid? DeviceUuid,
+    string? DeviceToken,
     string Status);
 
 public class RegisterDeviceForHiveCommandValidator : AbstractValidator<RegisterDeviceForHiveCommand>
@@ -41,41 +40,36 @@ public class RegisterDeviceForHiveCommandHandler(
         var apiary = await apiaryRepository.GetByIdAsync(request.ApiaryId, ct);
 
         if (apiary is null)
-            throw new Exception("Pčelinjak nije pronađen.");
+            throw new KeyNotFoundException("Pčelinjak nije pronađen.");
 
         if (apiary.OwnerId != request.OwnerId)
-            throw new Exception("Nemate pristup ovom pčelinjaku.");
+            throw new UnauthorizedAccessException("Nemate pristup ovom pčelinjaku.");
 
         var hive = await hiveRepository.GetByIdAsync(request.HiveId, ct);
 
         if (hive is null)
-            throw new Exception("Košnica nije pronađena.");
+            throw new KeyNotFoundException("Košnica nije pronađena.");
 
         if (hive.ApiaryId != request.ApiaryId)
-            throw new Exception("Košnica ne pripada ovom pčelinjaku.");
+            throw new UnauthorizedAccessException("Košnica ne pripada ovom pčelinjaku.");
 
         var existingBySerial = await deviceRepository.GetBySerialNumberAsync(request.SerialNumber, ct);
         if (existingBySerial is not null)
-            throw new Exception("Uređaj sa ovim serijskim brojem je već registrovan.");
+            throw new InvalidOperationException("Uređaj sa ovim serijskim brojem je već registrovan.");
 
         var existingByHive = await deviceRepository.GetByHiveIdAsync(request.HiveId, ct);
         if (existingByHive is not null)
-            throw new Exception("Za ovu košnicu je uređaj već registrovan.");
-
-        var deviceUuid = Guid.NewGuid();
-        var deviceToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            throw new InvalidOperationException("Za ovu košnicu je uređaj već registrovan.");
 
         Device device = Device.Create(request.SerialNumber, request.HiveId);
-        device.Pair(deviceUuid, deviceToken);
-
         await deviceRepository.SaveAsync(device, ct);
 
         return new RegisterDeviceForHiveResult(
             device.Id,
             device.HiveId,
             device.SerialNumber,
-            deviceUuid,
-            deviceToken,
+            device.DeviceUuid,
+            device.DeviceToken,
             device.Status);
     }
 }

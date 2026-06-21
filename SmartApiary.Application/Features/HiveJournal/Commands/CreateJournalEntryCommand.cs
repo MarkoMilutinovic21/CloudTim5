@@ -14,7 +14,8 @@ public record CreateJournalEntryCommand(
     int HoneyFrames,
     double HoneyKg,
     int BroodFrames,
-    bool QueenPresent) : IRequest<Guid>;
+    bool QueenPresent,
+    Guid BeekeeperId) : IRequest<Guid>;
 
 public class CreateJournalEntryCommandValidator : AbstractValidator<CreateJournalEntryCommand>
 {
@@ -28,22 +29,23 @@ public class CreateJournalEntryCommandValidator : AbstractValidator<CreateJourna
         RuleFor(x => x.HoneyFrames).GreaterThanOrEqualTo(0);
         RuleFor(x => x.HoneyKg).GreaterThanOrEqualTo(0);
         RuleFor(x => x.BroodFrames).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.BeekeeperId).NotEmpty();
     }
 }
 
 public class CreateJournalEntryCommandHandler(
     IHiveRepository hiveRepository,
-    IDeviceRepository deviceRepository,
+    IApiaryRepository apiaryRepository,
     IHiveJournalEntryRepository journalRepository) : IRequestHandler<CreateJournalEntryCommand, Guid>
 {
     public async Task<Guid> Handle(CreateJournalEntryCommand request, CancellationToken ct)
     {
         var hive = await hiveRepository.GetByIdAsync(request.HiveId, ct);
-        var device = hive is null
-            ? await deviceRepository.GetByHiveIdAsync(request.HiveId, ct)
-            : null;
+        if (hive is null) throw new KeyNotFoundException("Košnica nije pronađena.");
 
-        if (hive is null && device is null) throw new Exception("Kosnica nije pronadjena.");
+        var apiary = await apiaryRepository.GetByIdAsync(hive.ApiaryId, ct);
+        if (apiary is null || apiary.OwnerId != request.BeekeeperId)
+            throw new UnauthorizedAccessException("Nemate pristup ovoj košnici.");
 
         var entry = HiveJournalEntry.Create(
             request.HiveId,

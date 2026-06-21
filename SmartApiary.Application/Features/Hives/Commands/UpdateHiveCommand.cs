@@ -38,18 +38,18 @@ public class UpdateHiveCommandHandler(
         var apiary = await apiaryRepository.GetByIdAsync(request.ApiaryId, ct);
 
         if (apiary is null)
-            throw new Exception("Pčelinjak nije pronađen.");
+            throw new KeyNotFoundException("Pčelinjak nije pronađen.");
 
         if (apiary.OwnerId != request.OwnerId)
-            throw new Exception("Nemate pristup ovom pčelinjaku.");
+            throw new UnauthorizedAccessException("Nemate pristup ovom pčelinjaku.");
 
         var hive = await hiveRepository.GetByIdAsync(request.HiveId, ct);
 
         if (hive is null)
-            throw new Exception("Košnica nije pronađena.");
+            throw new KeyNotFoundException("Košnica nije pronađena.");
 
         if (hive.ApiaryId != request.ApiaryId)
-            throw new Exception("Košnica ne pripada ovom pčelinjaku.");
+            throw new UnauthorizedAccessException("Košnica ne pripada ovom pčelinjaku.");
 
         hive.Update(
             request.Name,

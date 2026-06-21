@@ -1,8 +1,9 @@
-﻿namespace SmartApiary.Application.Features.PesticideTreatments.Commands;
+namespace SmartApiary.Application.Features.PesticideTreatments.Commands;
 
 using MediatR;
 using SmartApiary.Application.Common.Interfaces;
 using SmartApiary.Application.Features.PesticideTreatments;
+using SmartApiary.Application.Features.Alerts;
 using SmartApiary.Domain.Models;
 
 public record CancelPesticideTreatmentCommand(
@@ -14,6 +15,7 @@ public class CancelPesticideTreatmentCommandHandler(
     IParcelRepository parcelRepository,
     IApiaryRepository apiaryRepository,
     IUserRepository userRepository,
+    IBeekeeperAlertRepository alertRepository,
     IEmailService emailService)
     : IRequestHandler<CancelPesticideTreatmentCommand>
 {
@@ -24,19 +26,19 @@ public class CancelPesticideTreatmentCommandHandler(
 
         if (treatment is null)
         {
-            throw new Exception("Najava tretiranja nije pronađena.");
+            throw new KeyNotFoundException("Najava tretiranja nije pronađena.");
         }
 
         if (treatment.FarmerId != request.FarmerId)
         {
-            throw new Exception("Nemate pristup ovoj najavi.");
+            throw new UnauthorizedAccessException("Nemate pristup ovoj najavi.");
         }
 
         Parcel? parcel = await parcelRepository.GetByIdAsync(treatment.ParcelId, ct);
 
         if (parcel is null)
         {
-            throw new Exception("Parcela nije pronađena.");
+            throw new KeyNotFoundException("Parcela nije pronađena.");
         }
 
         IReadOnlyCollection<User> nearbyBeekeepers =
@@ -48,9 +50,11 @@ public class CancelPesticideTreatmentCommandHandler(
 
         string message = PesticideTreatmentNotificationHelper.CreateCancelledMessage(parcel);
 
-        await PesticideTreatmentNotificationHelper.TryNotifyBeekeepersAsync(
+        await BeekeeperAlertHelper.CreateAlertsAsync(
             nearbyBeekeepers,
+            alertRepository,
             emailService,
+            BeekeeperAlertTypes.PesticideTreatment,
             "Otkazivanje najave tretiranja pesticidima - Smart Apiary",
             message,
             ct);

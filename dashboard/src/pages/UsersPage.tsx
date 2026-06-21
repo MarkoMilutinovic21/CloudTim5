@@ -53,6 +53,8 @@ function UsersPage() {
 
   useEffect(() => {
     fetchUsers()
+    // Initial load only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) {

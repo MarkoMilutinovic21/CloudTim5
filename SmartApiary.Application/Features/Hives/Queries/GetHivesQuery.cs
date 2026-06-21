@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,8 +28,8 @@ public class GetHivesQueryHandler(
     public async Task<IReadOnlyCollection<HiveDto>> Handle(GetHivesQuery request, CancellationToken ct)
     {
         var apiary = await apiaryRepository.GetByIdAsync(request.ApiaryId, ct);
-        if (apiary is null) throw new Exception("Pčelinjak nije pronađen.");
-        if (apiary.OwnerId != request.OwnerId) throw new Exception("Nemate pristup ovom pčelinjaku.");
+        if (apiary is null) throw new KeyNotFoundException("Pčelinjak nije pronađen.");
+        if (apiary.OwnerId != request.OwnerId) throw new UnauthorizedAccessException("Nemate pristup ovom pčelinjaku.");
 
         var hives = await hiveRepository.GetByApiaryIdAsync(request.ApiaryId, ct);
         return hives.Select(h => new HiveDto(

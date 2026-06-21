@@ -46,6 +46,19 @@ public class PesticideTreatmentRepository(IOptions<AzureTableOptions> options)
         return results.AsReadOnly();
     }
 
+    public async Task<IReadOnlyCollection<PesticideTreatment>> GetAllAsync(CancellationToken ct = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+        List<PesticideTreatment> results = new();
+        await foreach (PesticideTreatmentEntity entity in _tableClient.QueryAsync<PesticideTreatmentEntity>(
+            cancellationToken: ct))
+        {
+            results.Add(MapToDomain(entity));
+        }
+
+        return results.AsReadOnly();
+    }
+
     public async Task SaveAsync(PesticideTreatment treatment, CancellationToken ct = default)
     {
         await _tableClient.CreateIfNotExistsAsync(ct);
@@ -81,7 +94,11 @@ public class PesticideTreatmentRepository(IOptions<AzureTableOptions> options)
             entity.NotifiedBeekeepersCount,
             EnsureUtc(entity.CreatedAt),
             EnsureNullableUtc(entity.UpdatedAt),
-            EnsureNullableUtc(entity.CancelledAt));
+            EnsureNullableUtc(entity.CancelledAt),
+            EnsureNullableUtc(entity.WeatherObservedAt),
+            entity.WeatherDescription,
+            entity.WindSpeedMs,
+            entity.HadPrecipitation);
     }
 
     private static PesticideTreatmentEntity MapToEntity(PesticideTreatment treatment)
@@ -101,7 +118,11 @@ public class PesticideTreatmentRepository(IOptions<AzureTableOptions> options)
 
             CreatedAt = EnsureUtc(treatment.CreatedAt),
             UpdatedAt = EnsureNullableUtc(treatment.UpdatedAt),
-            CancelledAt = EnsureNullableUtc(treatment.CancelledAt)
+            CancelledAt = EnsureNullableUtc(treatment.CancelledAt),
+            WeatherObservedAt = EnsureNullableUtc(treatment.WeatherObservedAt),
+            WeatherDescription = treatment.WeatherDescription,
+            WindSpeedMs = treatment.WindSpeedMs,
+            HadPrecipitation = treatment.HadPrecipitation
         };
     }
 

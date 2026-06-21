@@ -12,4 +12,8 @@ public class PesticideTreatmentEntity : BaseTableEntity
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
+    public DateTime? WeatherObservedAt { get; set; }
+    public string WeatherDescription { get; set; } = string.Empty;
+    public double? WindSpeedMs { get; set; }
+    public bool HadPrecipitation { get; set; }
 }

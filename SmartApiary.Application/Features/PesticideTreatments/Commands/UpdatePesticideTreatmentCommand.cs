@@ -1,4 +1,4 @@
-﻿namespace SmartApiary.Application.Features.PesticideTreatments.Commands;
+namespace SmartApiary.Application.Features.PesticideTreatments.Commands;
 
 using FluentValidation;
 using MediatR;
@@ -25,7 +25,9 @@ public class UpdatePesticideTreatmentCommandValidator : AbstractValidator<Update
     {
         RuleFor(x => x.TreatmentId).NotEmpty();
         RuleFor(x => x.ParcelId).NotEmpty();
-        RuleFor(x => x.PlannedStartAt).GreaterThan(DateTime.MinValue);
+        RuleFor(x => x.PlannedStartAt)
+            .Must(value => value.ToUniversalTime() > DateTime.UtcNow)
+            .WithMessage("Termin tretiranja mora biti u budućnosti.");
         RuleFor(x => x.DurationHours).GreaterThan(0).LessThanOrEqualTo(24);
         RuleFor(x => x.PesticideType).MaximumLength(200);
         RuleFor(x => x.FarmerId).NotEmpty();
@@ -50,22 +52,35 @@ public class UpdatePesticideTreatmentCommandHandler(
             await treatmentRepository.GetByIdAsync(request.TreatmentId, ct);
 
         if (treatment is null)
-            throw new Exception("Najava tretiranja nije pronađena.");
+            throw new KeyNotFoundException("Najava tretiranja nije pronađena.");
 
         if (treatment.FarmerId != request.FarmerId)
-            throw new Exception("Nemate pristup ovoj najavi.");
+            throw new UnauthorizedAccessException("Nemate pristup ovoj najavi.");
 
         Parcel? parcel = await parcelRepository.GetByIdAsync(request.ParcelId, ct);
 
         if (parcel is null)
-            throw new Exception("Parcela nije pronađena.");
+            throw new KeyNotFoundException("Parcela nije pronađena.");
 
         if (parcel.OwnerId != request.FarmerId)
-            throw new Exception("Nemate pristup ovoj parceli.");
+            throw new UnauthorizedAccessException("Nemate pristup ovoj parceli.");
 
-        IReadOnlyCollection<User> nearbyBeekeepers =
+        IReadOnlyCollection<User> newNearbyBeekeepers =
             await PesticideTreatmentNotificationHelper.GetNearbyBeekeepersAsync(
                 parcel, apiaryRepository, userRepository, ct);
+
+        Parcel? previousParcel = treatment.ParcelId == request.ParcelId
+            ? parcel
+            : await parcelRepository.GetByIdAsync(treatment.ParcelId, ct);
+        IReadOnlyCollection<User> previousNearbyBeekeepers = previousParcel is null
+            ? Array.Empty<User>()
+            : await PesticideTreatmentNotificationHelper.GetNearbyBeekeepersAsync(
+                previousParcel, apiaryRepository, userRepository, ct);
+        IReadOnlyCollection<User> nearbyBeekeepers = newNearbyBeekeepers
+            .Concat(previousNearbyBeekeepers)
+            .DistinctBy(user => user.Id)
+            .ToList()
+            .AsReadOnly();
 
         string pesticideType = request.PesticideType ?? string.Empty;
 
@@ -84,7 +99,7 @@ public class UpdatePesticideTreatmentCommandHandler(
         await treatmentRepository.UpdateAsync(treatment, ct);
 
         string? windWarning = await weatherService.GetWeatherWarningAsync(
-            parcel.Latitude, parcel.Longitude, ct);
+            parcel.Latitude, parcel.Longitude, request.PlannedStartAt, ct);
 
         return new UpdatePesticideTreatmentResult(notifiedCount, windWarning);
     }

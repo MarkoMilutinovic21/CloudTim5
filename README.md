@@ -52,12 +52,21 @@ azurite
 
 ### 2. Pokreni backend
 
+Pre prvog pokretanja postavi lokalne tajne (vrednosti ne treba commitovati):
+
+```bash
+dotnet user-secrets set "JwtSettings:Secret" "lokalni-jwt-kljuc-sa-najmanje-32-karaktera" --project SmartApiary.WebApi
+dotnet user-secrets set "SeedAdmin:Email" "admin@smartapiary.local" --project SmartApiary.WebApi
+dotnet user-secrets set "SeedAdmin:Password" "promeni-ovu-jaku-lozinku" --project SmartApiary.WebApi
+dotnet user-secrets set "OpenWeatherMap:ApiKey" "OPENWEATHER_KLJUC" --project SmartApiary.WebApi
+```
+
 Otvori `SmartApiary.sln` u Visual Studio 2022 i pritisni `F5`.
 
 Backend će automatski:
 
 - kreirati SQL bazu podataka i pokrenuti migracije
-- kreirati admin korisnika (`admin@smartapiary.com` / `Admin123!`)
+- kreirati početnog administratora samo ako su `SeedAdmin` tajne podešene
 
 ### 3. Pokreni Azure Functions
 
@@ -76,7 +85,7 @@ U posebnom terminalu:
 dotnet run --project SmartApiary.Simulator
 ```
 
-Simulator registruje uređaj, uparuje ga i šalje telemetrijska merenja ka Azure Functions projektu.
+Prijavljeni pčelar registruje serijski broj uređaja za svoju košnicu. Simulator automatski otkriva sve registrovane uređaje u lokalnom Azurite skladištu, izvršava handshake za nove uređaje i istovremeno šalje telemetriju za sve uparene košnice.
 
 ### 5. Pokreni frontend
 
@@ -98,12 +107,9 @@ http://localhost:5173
 - Pčelar - upravljanje pčelinjacima i košnicama, telemetrija, upozorenja
 - Poljoprivrednik - upravljanje parcelama, najava prskanja pesticidima
 
-## Podrazumevani admin nalog
+## Administratorski nalog
 
-```text
-Email: admin@smartapiary.com
-Lozinka: Admin123!
-```
+Podrazumevana javno poznata lozinka ne postoji. Razvojni administratorski nalog se opciono kreira iz `SeedAdmin:Email` i `SeedAdmin:Password` user-secrets vrednosti.
 
 ## Struktura projekta
 

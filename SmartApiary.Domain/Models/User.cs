@@ -4,18 +4,19 @@ using SmartApiary.Domain.Common;
 
 public class User : AggregateRoot
 {
-    public string FirstName { get; private set; }
-    public string LastName { get; private set; }
-    public string Email { get; private set; }
-    public string Phone { get; private set; }
-    public string PasswordHash { get; private set; }
-    public string Role { get; private set; }
+    public string FirstName { get; private set; } = string.Empty;
+    public string LastName { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
+    public string Phone { get; private set; } = string.Empty;
+    public string PasswordHash { get; private set; } = string.Empty;
+    public string Role { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public string? ActivationToken { get; private set; }
     public DateTime? ActivationTokenExpiry { get; private set; }
     public string? ResetPasswordToken { get; private set; }
     public DateTime? ResetPasswordTokenExpiry { get; private set; }
+    public double WeightDropThresholdKg { get; private set; } = 10;
 
     private User() { }
 
@@ -38,7 +39,8 @@ public class User : AggregateRoot
             IsActive = false,
             CreatedAt = DateTime.UtcNow,
             ActivationToken = Guid.NewGuid().ToString("N"),
-            ActivationTokenExpiry = DateTime.UtcNow.AddHours(24)
+            ActivationTokenExpiry = DateTime.UtcNow.AddHours(24),
+            WeightDropThresholdKg = 10
         };
     }
 
@@ -72,4 +74,12 @@ public class User : AggregateRoot
 
     public bool IsResetPasswordTokenValid(string token) =>
         ResetPasswordToken == token && ResetPasswordTokenExpiry > DateTime.UtcNow;
+
+    public void SetWeightDropThreshold(double thresholdKg)
+    {
+        if (thresholdKg <= 0 || thresholdKg > 100)
+            throw new ArgumentOutOfRangeException(nameof(thresholdKg), "Prag mora biti između 0 i 100 kg.");
+
+        WeightDropThresholdKg = thresholdKg;
+    }
 }

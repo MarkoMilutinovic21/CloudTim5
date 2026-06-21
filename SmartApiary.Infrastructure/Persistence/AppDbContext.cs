@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(u => u.LastName).IsRequired().HasMaxLength(100);
             entity.Property(u => u.PasswordHash).IsRequired();
             entity.Property(u => u.Role).IsRequired().HasMaxLength(50);
+            entity.Property(u => u.WeightDropThresholdKg).HasDefaultValue(10d);
         });
     }
 }

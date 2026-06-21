@@ -8,12 +8,16 @@ public class PesticideTreatment : AggregateRoot
     public Guid FarmerId { get; private set; }
     public DateTime PlannedStartAt { get; private set; }
     public double DurationHours { get; private set; }
-    public string PesticideType { get; private set; }
-    public string Status { get; private set; }
+    public string PesticideType { get; private set; } = string.Empty;
+    public string Status { get; private set; } = string.Empty;
     public int NotifiedBeekeepersCount { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
     public DateTime? CancelledAt { get; private set; }
+    public DateTime? WeatherObservedAt { get; private set; }
+    public string WeatherDescription { get; private set; } = string.Empty;
+    public double? WindSpeedMs { get; private set; }
+    public bool HadPrecipitation { get; private set; }
 
     private PesticideTreatment() { }
 
@@ -49,7 +53,11 @@ public class PesticideTreatment : AggregateRoot
         int notifiedBeekeepersCount,
         DateTime createdAt,
         DateTime? updatedAt,
-        DateTime? cancelledAt)
+        DateTime? cancelledAt,
+        DateTime? weatherObservedAt,
+        string weatherDescription,
+        double? windSpeedMs,
+        bool hadPrecipitation)
     {
         return new PesticideTreatment
         {
@@ -63,7 +71,11 @@ public class PesticideTreatment : AggregateRoot
             NotifiedBeekeepersCount = notifiedBeekeepersCount,
             CreatedAt = createdAt,
             UpdatedAt = updatedAt,
-            CancelledAt = cancelledAt
+            CancelledAt = cancelledAt,
+            WeatherObservedAt = weatherObservedAt,
+            WeatherDescription = weatherDescription,
+            WindSpeedMs = windSpeedMs,
+            HadPrecipitation = hadPrecipitation
         };
     }
 
@@ -85,6 +97,10 @@ public class PesticideTreatment : AggregateRoot
         PesticideType = pesticideType;
         NotifiedBeekeepersCount = notifiedBeekeepersCount;
         UpdatedAt = DateTime.UtcNow;
+        WeatherObservedAt = null;
+        WeatherDescription = string.Empty;
+        WindSpeedMs = null;
+        HadPrecipitation = false;
     }
 
     public void Cancel()
@@ -98,10 +114,36 @@ public class PesticideTreatment : AggregateRoot
         CancelledAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void Complete()
+    {
+        if (Status != PesticideTreatmentStatuses.Scheduled)
+            return;
+
+        Status = PesticideTreatmentStatuses.Completed;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void CaptureWeather(
+        DateTime observedAt,
+        string description,
+        double windSpeedMs,
+        bool hadPrecipitation)
+    {
+        if (Status != PesticideTreatmentStatuses.Scheduled || WeatherObservedAt.HasValue)
+            return;
+
+        WeatherObservedAt = observedAt;
+        WeatherDescription = description;
+        WindSpeedMs = windSpeedMs;
+        HadPrecipitation = hadPrecipitation;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
 
 public static class PesticideTreatmentStatuses
 {
     public const string Scheduled = "Scheduled";
     public const string Cancelled = "Cancelled";
+    public const string Completed = "Completed";
 }

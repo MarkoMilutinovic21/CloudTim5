@@ -7,21 +7,17 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using SmartApiary.Application.Common.Interfaces;
-using SmartApiary.Application.Features.SprayingRecords.Commands;
 using SmartApiary.Application.Features.SprayingRecords.Queries;
 using SmartApiary.Domain.Models;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/farmer/spraying-records")]
 [Authorize(Roles = "Farmer")]
 public class FarmerSprayingRecordsController(IMediator mediator, IParcelRepository parcelRepository) : ControllerBase
 {
-    [HttpPost]
-    public async Task<IActionResult> Create(CreateSprayingRecordCommand command, CancellationToken ct)
-    {
-        var result = await mediator.Send(command, ct);
-        return Ok(new { id = result.Id, windWarning = result.WindWarning });
-    }
+    private Guid GetUserId() =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpGet("{parcelId}")]
     public async Task<IActionResult> Get(
@@ -30,7 +26,7 @@ public class FarmerSprayingRecordsController(IMediator mediator, IParcelReposito
         [FromQuery] DateTime? to,
         CancellationToken ct)
     {
-        var records = await mediator.Send(new GetSprayingRecordsQuery(parcelId, from, to), ct);
+        var records = await mediator.Send(new GetSprayingRecordsQuery(parcelId, GetUserId(), from, to), ct);
         return Ok(records);
     }
 
@@ -41,7 +37,7 @@ public class FarmerSprayingRecordsController(IMediator mediator, IParcelReposito
         [FromQuery] DateTime? to,
         CancellationToken ct)
     {
-        var records = await mediator.Send(new GetSprayingRecordsQuery(parcelId, from, to), ct);
+        var records = await mediator.Send(new GetSprayingRecordsQuery(parcelId, GetUserId(), from, to), ct);
         var parcel = await parcelRepository.GetByIdAsync(parcelId, ct);
         var parcelName = parcel?.Name ?? parcelId.ToString();
 
@@ -79,15 +75,21 @@ public class FarmerSprayingRecordsController(IMediator mediator, IParcelReposito
                     table.ColumnsDefinition(columns =>
                     {
                         columns.RelativeColumn(3);
+                        columns.RelativeColumn(3);
                         columns.RelativeColumn(2);
                         columns.RelativeColumn(3);
+                        columns.RelativeColumn(3);
+                        columns.RelativeColumn(4);
                     });
 
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Datum i vreme").Bold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Završetak").Bold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Trajanje").Bold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Preparat").Bold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Kultura").Bold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Vreme").Bold();
                     });
 
                     foreach (var record in records)
@@ -95,9 +97,15 @@ public class FarmerSprayingRecordsController(IMediator mediator, IParcelReposito
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6)
                             .Text(record.StartTime.ToString("dd.MM.yyyy HH:mm"));
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6)
+                            .Text(record.EndTime.ToString("dd.MM.yyyy HH:mm"));
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6)
                             .Text($"{record.DurationHours} h");
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6)
                             .Text(record.ChemicalName);
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6)
+                            .Text(string.IsNullOrWhiteSpace(record.CropName) ? "—" : record.CropName);
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6)
+                            .Text(FormatWeather(record));
                     }
                 });
 
@@ -110,5 +118,17 @@ public class FarmerSprayingRecordsController(IMediator mediator, IParcelReposito
                 });
             });
         }).GeneratePdf();
+    }
+
+    private static string FormatWeather(SprayingRecord record)
+    {
+        List<string> values = new();
+        if (!string.IsNullOrWhiteSpace(record.WeatherDescription))
+            values.Add(record.WeatherDescription);
+        if (record.WindSpeedMs.HasValue)
+            values.Add($"vetar {record.WindSpeedMs.Value:0.0} m/s");
+        if (record.HadPrecipitation)
+            values.Add("padavine");
+        return values.Count == 0 ? "Nema podataka" : string.Join(", ", values);
     }
 }

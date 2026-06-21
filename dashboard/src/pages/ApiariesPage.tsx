@@ -69,9 +69,10 @@ function ApiariesPage() {
     try {
       const response = await axios.get<Apiary[]>(`${apiBase}/Apiaries`, { headers })
       setApiaries(response.data)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Apiary load failed:', err)
-      setError(err.response ? `Greska pri ucitavanju pcelinjaka. Status: ${err.response.status}` : 'Backend nije dostupan.')
+      setError(response ? `Greska pri ucitavanju pcelinjaka. Status: ${response.status}` : 'Backend nije dostupan.')
     } finally {
       setLoading(false)
     }
@@ -146,9 +147,10 @@ function ApiariesPage() {
       setImagePreviewUrl('')
       setEditingId(null)
       await fetchApiaries()
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Apiary save failed:', err)
-      setError(err.response ? `Greska pri cuvanju pcelinjaka. Status: ${err.response.status}` : 'Backend nije dostupan.')
+      setError(response ? `Greska pri cuvanju pcelinjaka. Status: ${response.status}` : 'Backend nije dostupan.')
     } finally {
       setSaving(false)
     }
@@ -183,9 +185,10 @@ function ApiariesPage() {
       await axios.delete(`${apiBase}/Apiaries/${id}`, { headers })
       setSuccess('Pcelinjak je obrisan.')
       await fetchApiaries()
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Apiary delete failed:', err)
-      setError(err.response ? `Greska pri brisanju pcelinjaka. Status: ${err.response.status}` : 'Backend nije dostupan.')
+      setError(response ? `Greska pri brisanju pcelinjaka. Status: ${response.status}` : 'Backend nije dostupan.')
     }
   }
 

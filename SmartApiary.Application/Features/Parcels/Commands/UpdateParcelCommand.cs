@@ -1,4 +1,4 @@
-﻿namespace SmartApiary.Application.Features.Parcels.Commands;
+namespace SmartApiary.Application.Features.Parcels.Commands;
 
 using FluentValidation;
 using MediatR;
@@ -55,12 +55,12 @@ public class UpdateParcelCommandHandler(
 
         if (parcel is null)
         {
-            throw new Exception("Parcela nije pronađena.");
+            throw new KeyNotFoundException("Parcela nije pronađena.");
         }
 
         if (parcel.OwnerId != request.OwnerId)
         {
-            throw new Exception("Nemate pristup ovoj parceli.");
+            throw new UnauthorizedAccessException("Nemate pristup ovoj parceli.");
         }
 
         parcel.Update(

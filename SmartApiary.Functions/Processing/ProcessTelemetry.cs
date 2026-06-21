@@ -81,15 +81,6 @@ public class ProcessTelemetry(
             measurement.MeasuredAt >= previousMeasurement.MeasuredAt &&
             previousMeasurement.WeightKg > 0;
 
-        bool weightDropDetected = hasPrevious &&
-            measurement.WeightKg <= previousMeasurement!.WeightKg * 0.7;
-
-        bool lowBatteryDetected = measurement.BatteryPercent < 15 &&
-            (previousMeasurement is null || previousMeasurement.BatteryPercent >= 20);
-
-        if (!weightDropDetected && !lowBatteryDetected)
-            return;
-
         Hive? hive = await hiveRepository.GetByIdAsync(measurement.HiveId, ct);
 
         if (hive is null)
@@ -123,11 +114,23 @@ public class ProcessTelemetry(
             return;
         }
 
+        double weightDropThresholdKg = beekeeper.WeightDropThresholdKg > 0
+            ? beekeeper.WeightDropThresholdKg
+            : 10;
+        bool weightDropDetected = hasPrevious &&
+            previousMeasurement!.WeightKg - measurement.WeightKg >= weightDropThresholdKg;
+        bool lowBatteryDetected = measurement.BatteryPercent < 15 &&
+            (previousMeasurement is null || previousMeasurement.BatteryPercent >= 15);
+
+        if (!weightDropDetected && !lowBatteryDetected)
+            return;
+
         const string subject = "Hitno upozorenje - Smart Apiary";
 
         if (weightDropDetected)
         {
-            string message = CreateWeightDropMessage(apiary, hive, previousMeasurement!, measurement);
+            string message = CreateWeightDropMessage(
+                apiary, hive, previousMeasurement!, measurement, weightDropThresholdKg);
 
             await BeekeeperAlertHelper.CreateAlertAsync(
                 beekeeper,
@@ -158,7 +161,8 @@ public class ProcessTelemetry(
         Apiary apiary,
         Hive hive,
         TelemetryMeasurement previousMeasurement,
-        TelemetryMeasurement measurement)
+        TelemetryMeasurement measurement,
+        double thresholdKg)
     {
         double previousWeight = Math.Round(previousMeasurement.WeightKg, 2);
         double currentWeight = Math.Round(measurement.WeightKg, 2);
@@ -166,7 +170,7 @@ public class ProcessTelemetry(
         return
             "Poštovani," + Environment.NewLine +
             Environment.NewLine +
-            "Vaša košnica je pod rizikom: težina je opala za više od 30% u odnosu na prethodno merenje." +
+            $"Vaša košnica je pod rizikom: težina je opala za najmanje {thresholdKg:0.##} kg." +
             Environment.NewLine +
             $"Pčelinjak: {apiary.Name}" + Environment.NewLine +
             $"Košnica: {hive.Name}" + Environment.NewLine +
@@ -186,7 +190,7 @@ public class ProcessTelemetry(
         return
             "Poštovani," + Environment.NewLine +
             Environment.NewLine +
-            "Vaša košnica je pod rizikom: baterija pametne vage je pala ispod 20%." +
+            "Vaša košnica je pod rizikom: baterija pametne vage je pala ispod 15%." +
             Environment.NewLine +
             $"Pčelinjak: {apiary.Name}" + Environment.NewLine +
             $"Košnica: {hive.Name}" + Environment.NewLine +

@@ -1,4 +1,4 @@
-﻿namespace SmartApiary.Application.Features.PesticideTreatments.Commands;
+namespace SmartApiary.Application.Features.PesticideTreatments.Commands;
 
 using FluentValidation;
 using MediatR;
@@ -24,7 +24,9 @@ public class CreatePesticideTreatmentCommandValidator : AbstractValidator<Create
     public CreatePesticideTreatmentCommandValidator()
     {
         RuleFor(x => x.ParcelId).NotEmpty();
-        RuleFor(x => x.PlannedStartAt).GreaterThan(DateTime.MinValue);
+        RuleFor(x => x.PlannedStartAt)
+            .Must(value => value.ToUniversalTime() > DateTime.UtcNow)
+            .WithMessage("Termin tretiranja mora biti u budućnosti.");
         RuleFor(x => x.DurationHours).GreaterThan(0).LessThanOrEqualTo(24);
         RuleFor(x => x.PesticideType).MaximumLength(200);
         RuleFor(x => x.FarmerId).NotEmpty();
@@ -48,10 +50,10 @@ public class CreatePesticideTreatmentCommandHandler(
         Parcel? parcel = await parcelRepository.GetByIdAsync(request.ParcelId, ct);
 
         if (parcel is null)
-            throw new Exception("Parcela nije pronađena.");
+            throw new KeyNotFoundException("Parcela nije pronađena.");
 
         if (parcel.OwnerId != request.FarmerId)
-            throw new Exception("Nemate pristup ovoj parceli.");
+            throw new UnauthorizedAccessException("Nemate pristup ovoj parceli.");
 
         IReadOnlyCollection<User> nearbyBeekeepers =
             await PesticideTreatmentNotificationHelper.GetNearbyBeekeepersAsync(
@@ -75,7 +77,7 @@ public class CreatePesticideTreatmentCommandHandler(
         await treatmentRepository.SaveAsync(treatment, ct);
 
         string? windWarning = await weatherService.GetWeatherWarningAsync(
-            parcel.Latitude, parcel.Longitude, ct);
+            parcel.Latitude, parcel.Longitude, request.PlannedStartAt, ct);
 
         return new CreatePesticideTreatmentResult(treatment.Id, treatment.NotifiedBeekeepersCount, windWarning);
     }

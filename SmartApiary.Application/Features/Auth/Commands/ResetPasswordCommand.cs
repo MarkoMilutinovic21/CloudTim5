@@ -1,4 +1,4 @@
-﻿namespace SmartApiary.Application.Features.Auth.Commands;
+namespace SmartApiary.Application.Features.Auth.Commands;
 
 using FluentValidation;
 using MediatR;
@@ -26,7 +26,7 @@ public class ResetPasswordCommandHandler(
         var user = await userRepository.GetByResetPasswordTokenAsync(request.Token, ct);
 
         if (user is null || !user.IsResetPasswordTokenValid(request.Token))
-            throw new Exception("Token nije validan ili je istekao.");
+            throw new InvalidOperationException("Token nije validan ili je istekao.");
 
         user.ResetPassword(BCrypt.Net.BCrypt.HashPassword(request.Password));
         await userRepository.UpdateAsync(user, ct);

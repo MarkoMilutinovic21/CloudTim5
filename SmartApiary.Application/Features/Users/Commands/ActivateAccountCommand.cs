@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,7 +32,7 @@ public class ActivateAccountCommandHandler(
         var user = await userRepository.GetByActivationTokenAsync(request.Token, ct);
 
         if (user is null || !user.IsActivationTokenValid(request.Token))
-            throw new Exception("Token nije validan ili je istekao.");
+            throw new InvalidOperationException("Token nije validan ili je istekao.");
 
         user.SetPassword(BCrypt.Net.BCrypt.HashPassword(request.Password));
         await userRepository.UpdateAsync(user, ct);

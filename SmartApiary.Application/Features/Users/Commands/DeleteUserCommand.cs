@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,7 +17,7 @@ public class DeleteUserCommandHandler(
     public async Task Handle(DeleteUserCommand request, CancellationToken ct)
     {
         var user = await userRepository.GetByIdAsync(request.UserId, ct);
-        if (user is null) throw new Exception("Korisnik nije pronađen.");
+        if (user is null) throw new KeyNotFoundException("Korisnik nije pronađen.");
         await userRepository.DeleteAsync(user, ct);
     }
 }

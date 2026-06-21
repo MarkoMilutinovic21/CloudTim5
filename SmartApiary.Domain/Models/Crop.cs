@@ -9,7 +9,7 @@ namespace SmartApiary.Domain.Models
 {
     public class Crop : AggregateRoot
     {
-        public string Name { get; private set; }
+        public string Name { get; private set; } = string.Empty;
         public DateTime SowingDate { get; private set; }
         public Guid ParcelId { get; private set; }
 

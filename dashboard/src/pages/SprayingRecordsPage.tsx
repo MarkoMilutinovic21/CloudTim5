@@ -2,326 +2,144 @@ import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import ReturnToDashboardButton from '../components/ReturnToDashboardButton'
 
-interface Parcel {
-  id: string
-  name: string
-  area: number
-  location: string
-}
-
+interface Parcel { id: string; name: string }
 interface SprayingRecord {
   id: string
   startTime: string
+  endTime: string
   durationHours: number
   chemicalName: string
   parcelId: string
+  parcelName: string
+  cropName: string
+  weatherDescription: string
+  windSpeedMs: number | null
+  hadPrecipitation: boolean
 }
 
 const apiBase = 'http://localhost:5108/api'
-
-const maxDateTime = () => new Date().toISOString().slice(0, 16)
-
-const defaultFrom = () => {
-  const d = new Date()
-  d.setDate(d.getDate() - 30)
-  return d.toISOString().slice(0, 10)
+const dateValue = (offsetDays = 0) => {
+  const date = new Date()
+  date.setDate(date.getDate() + offsetDays)
+  return date.toISOString().slice(0, 10)
 }
 
-const defaultTo = () => new Date().toISOString().slice(0, 10)
-
-function SprayingRecordsPage() {
+export default function SprayingRecordsPage() {
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [records, setRecords] = useState<SprayingRecord[]>([])
+  const [selectedParcelId, setSelectedParcelId] = useState('')
+  const [from, setFrom] = useState(dateValue(-30))
+  const [to, setTo] = useState(dateValue())
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [windWarning, setWindWarning] = useState('')
-
-  const [selectedParcelId, setSelectedParcelId] = useState('')
-  const [startTime, setStartTime] = useState('')
-  const [durationHours, setDurationHours] = useState('')
-  const [chemicalName, setChemicalName] = useState('')
-
-  const [from, setFrom] = useState(defaultFrom())
-  const [to, setTo] = useState(defaultTo())
-
   const token = localStorage.getItem('token')
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
-  const fetchParcels = async () => {
-    try {
-      const response = await axios.get(`${apiBase}/Parcels`, { headers })
-      setParcels(response.data)
-    } catch {
-      setError('Greška pri učitavanju parcela.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchRecords = async (parcelId: string, fromDate = from, toDate = to) => {
-    if (!parcelId) return
-    try {
-      const response = await axios.get(`${apiBase}/farmer/spraying-records/${parcelId}`, {
-        headers,
-        params: { from: fromDate, to: toDate },
+  useEffect(() => {
+    let active = true
+    axios.get<Parcel[]>(`${apiBase}/Parcels`, { headers })
+      .then(response => {
+        if (!active) return
+        setParcels(response.data)
+        setSelectedParcelId(response.data[0]?.id ?? '')
       })
-      setRecords(response.data)
-    } catch {
-      setError('Greška pri učitavanju zapisa prskanja.')
-    }
-  }
+      .catch(() => { if (active) setError('Parcele nisu mogle da se učitaju.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [headers])
 
   useEffect(() => {
-    fetchParcels()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const createRecord = async () => {
-    if (!selectedParcelId || !startTime || !durationHours || !chemicalName.trim()) {
-      setError('Sva polja su obavezna.')
+    if (!selectedParcelId) {
+      setRecords([])
       return
     }
 
-    setSaving(true)
-    setError('')
-    setSuccess('')
-    setWindWarning('')
-
-    try {
-      const response = await axios.post(
-        `${apiBase}/farmer/spraying-records`,
-        {
-          startTime: new Date(startTime).toISOString(),
-          durationHours: Number(durationHours),
-          chemicalName,
-          parcelId: selectedParcelId,
-        },
-        { headers },
-      )
-
-      setSuccess('Zapis o prskanju uspješno sačuvan.')
-      if (response.data.windWarning) setWindWarning(response.data.windWarning)
-      setChemicalName('')
-      setDurationHours('')
-      setStartTime('')
-      fetchRecords(selectedParcelId)
-    } catch (err: any) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        setError('Nemate pristup. Prijavite se kao farmer.')
-      } else if (err.response?.data?.errors) {
-        const firstError = Object.values(err.response.data.errors)[0] as string[]
-        setError(firstError[0])
-      } else {
-        setError('Greška pri čuvanju zapisa.')
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
+    let active = true
+    axios.get<SprayingRecord[]>(`${apiBase}/farmer/spraying-records/${selectedParcelId}`, {
+      headers,
+      params: { from, to },
+    })
+      .then(response => { if (active) setRecords(response.data) })
+      .catch(() => { if (active) setError('Karton prskanja nije mogao da se učita.') })
+    return () => { active = false }
+  }, [selectedParcelId, from, to, headers])
 
   const exportPdf = async () => {
     if (!selectedParcelId) return
-
     setExporting(true)
     setError('')
-
     try {
       const response = await axios.get(
         `${apiBase}/farmer/spraying-records/${selectedParcelId}/export-pdf`,
-        {
-          headers,
-          params: { from, to },
-          responseType: 'blob',
-        },
+        { headers, params: { from, to }, responseType: 'blob' },
       )
-
       const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `karton-prskanja-${new Date().toISOString().slice(0, 10)}.pdf`
-      a.click()
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `karton-prskanja-${dateValue()}.pdf`
+      link.click()
       URL.revokeObjectURL(url)
     } catch {
-      setError('Greška pri generisanju PDF-a.')
+      setError('PDF nije mogao da se generiše.')
     } finally {
       setExporting(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen app-shell flex items-center justify-center text-white">
-        Učitavanje...
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen app-shell p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white mt-2">Digitalni karton prskanja</h1>
-            <p className="text-slate-400 text-sm">Evidencija prskanja pesticidima po parcelama.</p>
+            <h1 className="text-2xl font-bold text-white">Digitalni karton prskanja</h1>
+            <p className="mt-2 text-sm text-slate-400">
+              Izvršeni, neotkazani tretmani automatski se evidentiraju nakon isteka termina.
+            </p>
           </div>
           <ReturnToDashboardButton />
         </div>
 
-        {error && (
-          <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded mb-4 text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded mb-4 text-sm">
-            {success}
-          </div>
-        )}
-        {windWarning && (
-          <div className="bg-yellow-900/50 border border-yellow-600 text-yellow-300 px-4 py-3 rounded mb-4 text-sm">
-            ⚠ {windWarning}
-          </div>
-        )}
+        {error && <div className="mb-4 rounded border border-red-700 bg-red-900/50 p-3 text-red-300">{error}</div>}
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
-          <h2 className="text-white font-bold text-lg mb-4">Novi zapis</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-slate-400 text-sm mb-2">Parcela</label>
-              <select
-                value={selectedParcelId}
-                onChange={(e) => {
-                  const id = e.target.value
-                  setSelectedParcelId(id)
-                  if (id) fetchRecords(id)
-                }}
-                className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-              >
-                <option value="">-- Izaberi parcelu --</option>
-                {parcels.map((parcel) => (
-                  <option key={parcel.id} value={parcel.id}>
-                    {parcel.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-slate-400 text-sm mb-2">Datum i vreme prskanja</label>
-              <input
-                type="datetime-local"
-                value={startTime}
-                max={maxDateTime()}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-400 text-sm mb-2">Trajanje (sati)</label>
-              <input
-                type="number"
-                min="0.5"
-                step="0.5"
-                value={durationHours}
-                onChange={(e) => setDurationHours(e.target.value)}
-                className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-400 text-sm mb-2">Preparat</label>
-              <input
-                type="text"
-                value={chemicalName}
-                onChange={(e) => setChemicalName(e.target.value)}
-                className="w-full bg-slate-800 text-white border border-slate-700 rounded px-4 py-3 focus:outline-none focus:border-yellow-500"
-                placeholder="Naziv pesticida ili preparata"
-              />
-            </div>
-            <button
-              onClick={createRecord}
-              disabled={saving}
-              className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-3 rounded transition-colors disabled:opacity-50"
-            >
-              {saving ? 'Čuvanje...' : 'Sačuvaj zapis'}
-            </button>
-          </div>
-        </div>
+        <section className="mb-6 grid gap-4 rounded-xl border border-slate-800 bg-slate-900 p-5 md:grid-cols-4">
+          <label className="text-sm text-slate-400">
+            Parcela
+            <select value={selectedParcelId} onChange={event => setSelectedParcelId(event.target.value)}
+              className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-white">
+              <option value="">Izaberite parcelu</option>
+              {parcels.map(parcel => <option key={parcel.id} value={parcel.id}>{parcel.name}</option>)}
+            </select>
+          </label>
+          <label className="text-sm text-slate-400">Od
+            <input type="date" value={from} onChange={event => setFrom(event.target.value)}
+              className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-white" />
+          </label>
+          <label className="text-sm text-slate-400">Do
+            <input type="date" value={to} onChange={event => setTo(event.target.value)}
+              className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-white" />
+          </label>
+          <button type="button" onClick={exportPdf} disabled={exporting || records.length === 0}
+            className="self-end rounded bg-yellow-500 px-4 py-2 font-bold text-slate-950 disabled:opacity-50">
+            {exporting ? 'Generisanje...' : 'Izvezi PDF'}
+          </button>
+        </section>
 
-        {selectedParcelId && (
-          <section className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-800">
-              <h2 className="text-white font-bold mb-3">Istorija prskanja</h2>
-              <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
-                <div>
-                  <label className="block text-slate-400 text-xs mb-1">Od</label>
-                  <input
-                    type="date"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-yellow-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 text-xs mb-1">Do</label>
-                  <input
-                    type="date"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    className="w-full bg-slate-800 text-white border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-yellow-500"
-                  />
-                </div>
-                <button
-                  onClick={() => fetchRecords(selectedParcelId)}
-                  className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-4 py-2 rounded text-sm transition-colors"
-                >
-                  Filtriraj
-                </button>
-                <button
-                  onClick={exportPdf}
-                  disabled={exporting || records.length === 0}
-                  className="bg-slate-600 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded text-sm transition-colors disabled:opacity-50"
-                >
-                  {exporting ? 'Generisanje...' : 'Izvezi PDF'}
-                </button>
-              </div>
-            </div>
-
-            {records.length === 0 ? (
-              <div className="p-5 text-slate-400 text-sm">Nema zapisa za izabrani period.</div>
-            ) : (
-              <>
-                <div className="px-5 py-2 text-slate-500 text-xs border-b border-slate-800">
-                  {records.length} zapisa
-                </div>
-                <div className="divide-y divide-slate-800">
-                  {records.map((record) => (
-                    <div key={record.id} className="p-5 grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <div className="text-slate-500 text-xs">Datum</div>
-                        <div className="text-slate-200 font-semibold mt-1">
-                          {new Date(record.startTime).toLocaleString('sr-RS')}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500 text-xs">Trajanje</div>
-                        <div className="text-slate-200 font-semibold mt-1">{record.durationHours} h</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500 text-xs">Preparat</div>
-                        <div className="text-slate-200 font-semibold mt-1">{record.chemicalName}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
-        )}
+        <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+          {loading ? <p className="p-5 text-slate-400">Učitavanje...</p> : records.length === 0 ? (
+            <p className="p-5 text-slate-400">Nema izvršenih tretmana za izabrani period.</p>
+          ) : records.map(record => (
+            <article key={record.id} className="grid gap-4 border-b border-slate-800 p-5 text-sm md:grid-cols-3">
+              <div><span className="text-slate-500">Početak</span><p className="text-white">{new Date(record.startTime).toLocaleString('sr-RS')}</p></div>
+              <div><span className="text-slate-500">Završetak</span><p className="text-white">{new Date(record.endTime).toLocaleString('sr-RS')}</p></div>
+              <div><span className="text-slate-500">Preparat</span><p className="text-white">{record.chemicalName || 'Nije naveden'}</p></div>
+              <div><span className="text-slate-500">Kultura</span><p className="text-white">{record.cropName || 'Nije evidentirana'}</p></div>
+              <div><span className="text-slate-500">Vreme</span><p className="text-white">{record.weatherDescription || 'Nema podataka'}</p></div>
+              <div><span className="text-slate-500">Vetar/padavine</span><p className="text-white">{record.windSpeedMs?.toFixed(1) ?? '—'} m/s · {record.hadPrecipitation ? 'da' : 'ne'}</p></div>
+            </article>
+          ))}
+        </section>
       </div>
     </div>
   )
 }
-
-export default SprayingRecordsPage

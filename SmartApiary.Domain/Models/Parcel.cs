@@ -4,12 +4,12 @@ using SmartApiary.Domain.Common;
 
 public class Parcel : AggregateRoot
 {
-    public string Name { get; private set; }
+    public string Name { get; private set; } = string.Empty;
     public double Area { get; private set; }
-    public string Location { get; private set; }
+    public string Location { get; private set; } = string.Empty;
     public double Latitude { get; private set; }
     public double Longitude { get; private set; }
-    public string Description { get; private set; }
+    public string Description { get; private set; } = string.Empty;
     public Guid OwnerId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public string CropName { get; private set; } = string.Empty;

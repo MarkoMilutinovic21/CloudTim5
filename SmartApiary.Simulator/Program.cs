@@ -1,3 +1,5 @@
+using Azure;
+using Azure.Data.Tables;
 using Microsoft.Extensions.Configuration;
 using SmartApiary.Simulator.Configuration;
 using SmartApiary.Simulator.Models;
@@ -30,138 +32,229 @@ using HttpClient httpClient = new()
 
 DeviceClient deviceClient = new(httpClient);
 TelemetryPublisher telemetryPublisher = new(httpClient);
-TelemetryGenerator telemetryGenerator = new(settings);
+TableClient devicesTable = new(settings.StorageConnectionString, settings.DevicesTable);
 
-string statePath = Path.Combine(AppContext.BaseDirectory, "device-state.json");
-SimulatorState? state = LoadState(statePath, settings.SerialNumber);
+string statesPath = Path.Combine(AppContext.BaseDirectory, "device-states.json");
+string legacyStatePath = Path.Combine(AppContext.BaseDirectory, "device-state.json");
+Dictionary<string, SimulatorState> states = LoadStates(statesPath, legacyStatePath);
+Dictionary<string, TelemetryGenerator> generators = states.Keys.ToDictionary(
+    serialNumber => serialNumber,
+    _ => new TelemetryGenerator(settings),
+    StringComparer.OrdinalIgnoreCase);
 
-Guid hiveId = state?.HiveId ?? settings.HiveId.GetValueOrDefault(Guid.NewGuid());
-Guid deviceUuid = state?.DeviceUuid ?? settings.DeviceUuid.GetValueOrDefault(Guid.NewGuid());
+Console.WriteLine("Smart Apiary Multi-device Simulator");
+Console.WriteLine($"Functions: {NormalizeBaseUrl(settings.FunctionsBaseUrl)}");
+Console.WriteLine($"Devices:   {settings.DevicesTable} (automatic discovery)");
+Console.WriteLine($"Known:     {states.Count} paired device(s)");
+Console.WriteLine("[SIM] Discovering devices and sending telemetry. Press Ctrl+C to stop.");
 
-PrintHeader(settings, hiveId, deviceUuid);
-
-// Ako je token vec konfigurisan u appsettings.json (uredjaj uparen sa fronta), preskoci registraciju
-if (state is null && !string.IsNullOrWhiteSpace(settings.DeviceToken))
-{
-    if (!settings.HiveId.HasValue || !settings.DeviceUuid.HasValue)
-        throw new InvalidOperationException("HiveId i DeviceUuid moraju biti postavljeni uz DeviceToken.");
-
-    state = new SimulatorState
-    {
-        SerialNumber = settings.SerialNumber,
-        DeviceId = Guid.Empty,
-        HiveId = settings.HiveId.Value,
-        DeviceUuid = settings.DeviceUuid.Value,
-        DeviceToken = settings.DeviceToken
-    };
-
-    Console.WriteLine("[CONFIG] Token ucitan iz appsettings.json — preskace registraciju i handshake.");
-}
-
-try
-{
-    if (state is null)
-    {
-        RegisterDeviceResponse registered = await RegisterOrContinueAsync(
-            deviceClient,
-            settings.SerialNumber,
-            hiveId,
-            cts.Token);
-
-        Console.WriteLine($"[REGISTER] Device {registered.SerialNumber} status: {registered.Status}");
-
-        RegisterDeviceResponse paired = await deviceClient.HandshakeAsync(
-            settings.SerialNumber,
-            deviceUuid,
-            cts.Token);
-
-        if (string.IsNullOrWhiteSpace(paired.DeviceToken))
-            throw new InvalidOperationException("Handshake did not return a device token.");
-
-        state = new SimulatorState
-        {
-            SerialNumber = paired.SerialNumber,
-            DeviceId = paired.DeviceId,
-            HiveId = paired.HiveId,
-            DeviceUuid = deviceUuid,
-            DeviceToken = paired.DeviceToken
-        };
-
-        SaveState(statePath, state);
-
-        Console.WriteLine($"[HANDSHAKE] Device paired. DeviceId={paired.DeviceId}");
-    }
-    else
-    {
-        Console.WriteLine($"[STATE] Loaded existing token for DeviceId={state.DeviceId}");
-    }
-
-    Console.WriteLine("[SIM] Sending telemetry. Press Ctrl+C to stop.");
-
-    while (!cts.Token.IsCancellationRequested)
-    {
-        TelemetryRequest telemetry = telemetryGenerator.Generate(deviceUuid);
-
-        await telemetryPublisher.PublishAsync(
-            telemetry,
-            state.DeviceToken,
-            cts.Token);
-
-        Console.WriteLine(
-            $"[{telemetry.MeasuredAt:HH:mm:ss}] " +
-            $"weight={telemetry.WeightKg}kg, " +
-            $"temp={telemetry.TemperatureC}C, " +
-            $"humidity={telemetry.HumidityPercent}%, " +
-            $"battery={telemetry.BatteryPercent}%");
-
-        await Task.Delay(TimeSpan.FromSeconds(settings.DelaySeconds), cts.Token);
-    }
-}
-catch (OperationCanceledException)
-{
-    Console.WriteLine("[SIM] Stopped.");
-}
-catch (HttpRequestException ex)
-{
-    Console.WriteLine($"[ERROR] Cannot reach Functions host: {ex.Message}");
-    Console.WriteLine("Start Azurite and run: func start --port 7071");
-    Environment.ExitCode = 1;
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"[ERROR] {ex.Message}");
-    Environment.ExitCode = 1;
-}
-
-static async Task<RegisterDeviceResponse> RegisterOrContinueAsync(
-    DeviceClient deviceClient,
-    string serialNumber,
-    Guid hiveId,
-    CancellationToken ct)
+while (!cts.Token.IsCancellationRequested)
 {
     try
     {
-        return await deviceClient.RegisterAsync(serialNumber, hiveId, ct);
-    }
-    catch (InvalidOperationException ex) when (ex.Message.Contains("409"))
-    {
-        Console.WriteLine("[REGISTER] Device already exists. Continuing with handshake.");
-        return new RegisterDeviceResponse
+        IReadOnlyCollection<RegisteredDevice> registeredDevices =
+            await GetRegisteredDevicesAsync(devicesTable, cts.Token);
+
+        foreach (RegisteredDevice device in registeredDevices
+                     .Where(device => device.Status.Equals("Paired", StringComparison.OrdinalIgnoreCase)))
         {
-            SerialNumber = serialNumber,
-            HiveId = hiveId,
-            Status = "AlreadyRegistered"
-        };
+            if (states.ContainsKey(device.SerialNumber) ||
+                !device.DeviceId.HasValue ||
+                !device.HiveId.HasValue ||
+                !device.DeviceUuid.HasValue ||
+                string.IsNullOrWhiteSpace(device.DeviceToken))
+            {
+                continue;
+            }
+
+            SimulatorState recoveredState = new()
+            {
+                SerialNumber = device.SerialNumber,
+                DeviceId = device.DeviceId.Value,
+                HiveId = device.HiveId.Value,
+                DeviceUuid = device.DeviceUuid.Value,
+                DeviceToken = device.DeviceToken
+            };
+
+            states[recoveredState.SerialNumber] = recoveredState;
+            generators[recoveredState.SerialNumber] = new TelemetryGenerator(settings);
+            SaveStates(statesPath, states);
+
+            Console.WriteLine($"[RECOVER] {recoveredState.SerialNumber} -> hive {recoveredState.HiveId}");
+        }
+
+        foreach (RegisteredDevice device in registeredDevices
+                     .Where(device => device.Status.Equals("Unpaired", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (states.ContainsKey(device.SerialNumber))
+                continue;
+
+            try
+            {
+                Guid deviceUuid = Guid.NewGuid();
+                RegisterDeviceResponse paired = await deviceClient.HandshakeAsync(
+                    device.SerialNumber,
+                    deviceUuid,
+                    cts.Token);
+
+                if (string.IsNullOrWhiteSpace(paired.DeviceToken))
+                    throw new InvalidOperationException("Handshake did not return a device token.");
+
+                SimulatorState state = new()
+                {
+                    SerialNumber = paired.SerialNumber,
+                    DeviceId = paired.DeviceId,
+                    HiveId = paired.HiveId,
+                    DeviceUuid = deviceUuid,
+                    DeviceToken = paired.DeviceToken
+                };
+
+                states[state.SerialNumber] = state;
+                generators[state.SerialNumber] = new TelemetryGenerator(settings);
+                SaveStates(statesPath, states);
+
+                Console.WriteLine(
+                    $"[PAIR] {state.SerialNumber} -> hive {state.HiveId}, device {state.DeviceId}");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Console.WriteLine($"[PAIR ERROR] {device.SerialNumber}: {ex.Message}");
+            }
+        }
+
+        HashSet<string> existingSerialNumbers = registeredDevices
+            .Select(device => device.SerialNumber)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (SimulatorState state in states.Values
+                     .Where(state => existingSerialNumbers.Contains(state.SerialNumber))
+                     .ToList())
+        {
+            try
+            {
+                TelemetryGenerator generator = generators[state.SerialNumber];
+                TelemetryRequest telemetry = generator.Generate(state.DeviceUuid);
+
+                await telemetryPublisher.PublishAsync(
+                    telemetry,
+                    state.DeviceToken,
+                    cts.Token);
+
+                Console.WriteLine(
+                    $"[{telemetry.MeasuredAt:HH:mm:ss}] {state.SerialNumber} " +
+                    $"hive={state.HiveId} weight={telemetry.WeightKg}kg, " +
+                    $"temp={telemetry.TemperatureC}C, humidity={telemetry.HumidityPercent}%, " +
+                    $"battery={telemetry.BatteryPercent}%");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Console.WriteLine($"[SEND ERROR] {state.SerialNumber}: {ex.Message}");
+            }
+        }
+    }
+    catch (RequestFailedException ex)
+    {
+        Console.WriteLine($"[DISCOVERY ERROR] Cannot read devices table: {ex.Message}");
+    }
+    catch (HttpRequestException ex)
+    {
+        Console.WriteLine($"[CONNECTION ERROR] Cannot reach Functions host: {ex.Message}");
+    }
+
+    try
+    {
+        await Task.Delay(TimeSpan.FromSeconds(settings.DelaySeconds), cts.Token);
+    }
+    catch (OperationCanceledException)
+    {
+        break;
     }
 }
+
+Console.WriteLine("[SIM] Stopped.");
+
+static async Task<IReadOnlyCollection<RegisteredDevice>> GetRegisteredDevicesAsync(
+    TableClient tableClient,
+    CancellationToken ct)
+{
+    List<RegisteredDevice> devices = new();
+
+    await foreach (TableEntity entity in tableClient.QueryAsync<TableEntity>(
+                       maxPerPage: 100,
+                       cancellationToken: ct))
+    {
+        string? serialNumber = entity.GetString("SerialNumber");
+        string? status = entity.GetString("Status");
+
+        if (string.IsNullOrWhiteSpace(serialNumber) || string.IsNullOrWhiteSpace(status))
+            continue;
+
+        devices.Add(new RegisteredDevice(
+            serialNumber,
+            status,
+            ParseGuid(entity.RowKey),
+            ParseGuid(entity.GetString("HiveId")),
+            ParseGuid(entity.GetString("DeviceUuid")),
+            entity.GetString("DeviceToken")));
+    }
+
+    return devices;
+}
+
+static Dictionary<string, SimulatorState> LoadStates(string statesPath, string legacyStatePath)
+{
+    Dictionary<string, SimulatorState> states = new(StringComparer.OrdinalIgnoreCase);
+
+    if (File.Exists(statesPath))
+    {
+        List<SimulatorState>? saved = JsonSerializer.Deserialize<List<SimulatorState>>(
+            File.ReadAllText(statesPath));
+
+        foreach (SimulatorState state in saved ?? [])
+        {
+            if (IsValidState(state))
+                states[state.SerialNumber] = state;
+        }
+    }
+
+    if (File.Exists(legacyStatePath))
+    {
+        SimulatorState? legacy = JsonSerializer.Deserialize<SimulatorState>(
+            File.ReadAllText(legacyStatePath));
+
+        if (legacy is not null && IsValidState(legacy))
+            states.TryAdd(legacy.SerialNumber, legacy);
+    }
+
+    return states;
+}
+
+static void SaveStates(string statesPath, Dictionary<string, SimulatorState> states)
+{
+    File.WriteAllText(
+        statesPath,
+        JsonSerializer.Serialize(
+            states.Values.OrderBy(state => state.SerialNumber),
+            new JsonSerializerOptions { WriteIndented = true }));
+}
+
+static bool IsValidState(SimulatorState state) =>
+    !string.IsNullOrWhiteSpace(state.SerialNumber) &&
+    state.DeviceId != Guid.Empty &&
+    state.HiveId != Guid.Empty &&
+    state.DeviceUuid != Guid.Empty &&
+    !string.IsNullOrWhiteSpace(state.DeviceToken);
 
 static void ValidateSettings(SimulatorSettings settings)
 {
     if (string.IsNullOrWhiteSpace(settings.FunctionsBaseUrl))
         throw new InvalidOperationException("FunctionsBaseUrl is required.");
 
-    if (string.IsNullOrWhiteSpace(settings.SerialNumber))
-        throw new InvalidOperationException("SerialNumber is required.");
+    if (string.IsNullOrWhiteSpace(settings.StorageConnectionString))
+        throw new InvalidOperationException("StorageConnectionString is required.");
+
+    if (string.IsNullOrWhiteSpace(settings.DevicesTable))
+        throw new InvalidOperationException("DevicesTable is required.");
 
     if (settings.DelaySeconds < 1)
         throw new InvalidOperationException("DelaySeconds must be at least 1.");
@@ -170,36 +263,13 @@ static void ValidateSettings(SimulatorSettings settings)
 static string NormalizeBaseUrl(string baseUrl) =>
     baseUrl.EndsWith('/') ? baseUrl : $"{baseUrl}/";
 
-static SimulatorState? LoadState(string statePath, string serialNumber)
-{
-    if (!File.Exists(statePath))
-        return null;
+static Guid? ParseGuid(string? value) =>
+    Guid.TryParse(value, out Guid parsed) ? parsed : null;
 
-    string json = File.ReadAllText(statePath);
-    SimulatorState? state = JsonSerializer.Deserialize<SimulatorState>(json);
-
-    if (state?.SerialNumber != serialNumber || string.IsNullOrWhiteSpace(state.DeviceToken))
-        return null;
-
-    return state;
-}
-
-static void SaveState(string statePath, SimulatorState state)
-{
-    string json = JsonSerializer.Serialize(state, new JsonSerializerOptions
-    {
-        WriteIndented = true
-    });
-
-    File.WriteAllText(statePath, json);
-}
-
-static void PrintHeader(SimulatorSettings settings, Guid hiveId, Guid deviceUuid)
-{
-    Console.WriteLine("Smart Apiary Scale Simulator");
-    Console.WriteLine($"Functions: {NormalizeBaseUrl(settings.FunctionsBaseUrl)}");
-    Console.WriteLine($"Serial:    {settings.SerialNumber}");
-    Console.WriteLine($"HiveId:    {hiveId}");
-    Console.WriteLine($"UUID:      {deviceUuid}");
-    Console.WriteLine();
-}
+internal sealed record RegisteredDevice(
+    string SerialNumber,
+    string Status,
+    Guid? DeviceId,
+    Guid? HiveId,
+    Guid? DeviceUuid,
+    string? DeviceToken);

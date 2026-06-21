@@ -6,6 +6,7 @@ using SmartApiary.Domain.Models;
 
 public record GetDailyHiveWeightDeltaQuery(
     Guid HiveId,
+    Guid BeekeeperId,
     DateTime From,
     DateTime To) : IRequest<IReadOnlyCollection<DailyHiveWeightDeltaDto>>;
 
@@ -16,13 +17,23 @@ public record DailyHiveWeightDeltaDto(
     double? DeltaKg);
 
 public class GetDailyHiveWeightDeltaQueryHandler(
-    ITelemetryMeasurementRepository measurementRepository)
+    ITelemetryMeasurementRepository measurementRepository,
+    IHiveRepository hiveRepository,
+    IApiaryRepository apiaryRepository)
     : IRequestHandler<GetDailyHiveWeightDeltaQuery, IReadOnlyCollection<DailyHiveWeightDeltaDto>>
 {
     public async Task<IReadOnlyCollection<DailyHiveWeightDeltaDto>> Handle(
         GetDailyHiveWeightDeltaQuery request,
         CancellationToken ct)
     {
+        Hive? hive = await hiveRepository.GetByIdAsync(request.HiveId, ct);
+        if (hive is null)
+            throw new KeyNotFoundException("Košnica nije pronađena.");
+
+        Apiary? apiary = await apiaryRepository.GetByIdAsync(hive.ApiaryId, ct);
+        if (apiary is null || apiary.OwnerId != request.BeekeeperId)
+            throw new UnauthorizedAccessException("Nemate pristup ovoj košnici.");
+
         DateTime from = request.From.Date;
         DateTime to = request.To.Date.AddDays(1).AddTicks(-1);
 

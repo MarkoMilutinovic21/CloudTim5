@@ -68,9 +68,10 @@ function PesticideTreatmentsPage() {
 
       setParcels(parcelsResponse.data)
       setTreatments(treatmentsResponse.data)
-    } catch (err: any) {
-      if (err.response) {
-        setError(`Greška pri učitavanju najava tretiranja. Status: ${err.response.status}`)
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
+      if (response) {
+        setError(`Greška pri učitavanju najava tretiranja. Status: ${response.status}`)
       } else {
         setError('Greška pri učitavanju najava tretiranja. Backend nije dostupan.')
       }
@@ -129,9 +130,10 @@ function PesticideTreatmentsPage() {
       setForm(emptyForm)
       setEditingId(null)
       await fetchData()
-    } catch (err: any) {
-      if (err.response) {
-        setError(`Greška pri čuvanju najave tretiranja. Status: ${err.response.status}`)
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
+      if (response) {
+        setError(`Greška pri čuvanju najave tretiranja. Status: ${response.status}`)
       } else {
         setError('Greška pri čuvanju najave tretiranja. Backend nije dostupan.')
       }
@@ -176,9 +178,10 @@ function PesticideTreatmentsPage() {
       )
       setSuccess(response.data.message ?? 'Najava tretiranja je otkazana.')
       await fetchData()
-    } catch (err: any) {
-      if (err.response) {
-        setError(`Greška pri otkazivanju najave tretiranja. Status: ${err.response.status}`)
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
+      if (response) {
+        setError(`Greška pri otkazivanju najave tretiranja. Status: ${response.status}`)
       } else {
         setError('Greška pri otkazivanju najave tretiranja. Backend nije dostupan.')
       }
@@ -188,6 +191,7 @@ function PesticideTreatmentsPage() {
   const getStatusLabel = (status: string) => {
     if (status === 'Cancelled') return 'Otkazano'
     if (status === 'Scheduled') return 'Zakazano'
+    if (status === 'Completed') return 'Izvršeno'
     return status
   }
 
@@ -381,14 +385,14 @@ function PesticideTreatmentsPage() {
                           <div className="flex flex-col 2xl:flex-row gap-2">
                             <button
                               onClick={() => handleEdit(treatment)}
-                              disabled={treatment.status === 'Cancelled'}
+                              disabled={treatment.status !== 'Scheduled'}
                               className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
                             >
                               Izmeni
                             </button>
                             <button
                               onClick={() => handleCancelTreatment(treatment.id)}
-                              disabled={treatment.status === 'Cancelled'}
+                              disabled={treatment.status !== 'Scheduled'}
                               className="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
                             >
                               Otkaži

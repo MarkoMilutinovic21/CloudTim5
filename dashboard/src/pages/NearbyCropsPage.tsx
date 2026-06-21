@@ -23,13 +23,23 @@ interface NearbyCrop {
   distanceKm: number
 }
 
-const cropIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-})
+const cropIcon = (cropName: string) => {
+  const normalized = cropName.toLocaleLowerCase('sr-RS')
+  const symbol = normalized.includes('suncokret') || normalized.includes('sunflower')
+    ? '🌻'
+    : normalized.includes('lavand')
+      ? '🪻'
+      : normalized.includes('repic')
+        ? '🌼'
+        : '🌱'
+
+  return L.divIcon({
+    html: `<span style="font-size:30px;filter:drop-shadow(0 2px 2px #111)">${symbol}</span>`,
+    className: '',
+    iconSize: [34, 40],
+    iconAnchor: [17, 36],
+  })
+}
 
 function NearbyCropsPage() {
   const [crops, setCrops] = useState<NearbyCrop[]>([])
@@ -53,9 +63,10 @@ function NearbyCropsPage() {
         headers,
       })
       setCrops(response.data)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Nearby crops load failed:', err)
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      if (response?.status === 401 || response?.status === 403) {
         setError('Nemate pristup pregledu kultura. Prijavite se kao pcelar.')
       } else {
         setError('Greska pri ucitavanju posejanih kultura.')
@@ -76,7 +87,7 @@ function NearbyCropsPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white mt-2">Posejane kulture</h1>
-            <p className="text-slate-400 text-sm">Pregled svih kultura koje su poljoprivrednici evidentirali.</p>
+            <p className="text-slate-400 text-sm">Kulture u krugu od 5 km od vaših pčelinjaka.</p>
           </div>
 
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
@@ -114,7 +125,7 @@ function NearbyCropsPage() {
                   <Marker
                     key={`${crop.parcelId}-${crop.apiaryId}`}
                     position={[crop.latitude, crop.longitude]}
-                    icon={cropIcon}
+                    icon={cropIcon(crop.cropName)}
                   >
                     <Popup>
                       <strong>{crop.cropName}</strong>

@@ -1,4 +1,4 @@
-﻿namespace SmartApiary.Application.Features.HiveJournal.Commands;
+namespace SmartApiary.Application.Features.HiveJournal.Commands;
 
 using FluentValidation;
 using MediatR;
@@ -14,7 +14,8 @@ public record UpdateJournalEntryCommand(
     int HoneyFrames,
     double HoneyKg,
     int BroodFrames,
-    bool QueenPresent) : IRequest;
+    bool QueenPresent,
+    Guid BeekeeperId) : IRequest;
 
 public class UpdateJournalEntryCommandValidator : AbstractValidator<UpdateJournalEntryCommand>
 {
@@ -29,21 +30,29 @@ public class UpdateJournalEntryCommandValidator : AbstractValidator<UpdateJourna
         RuleFor(x => x.HoneyFrames).GreaterThanOrEqualTo(0);
         RuleFor(x => x.HoneyKg).GreaterThanOrEqualTo(0);
         RuleFor(x => x.BroodFrames).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.BeekeeperId).NotEmpty();
     }
 }
 
 public class UpdateJournalEntryCommandHandler(
-    IHiveJournalEntryRepository journalRepository) : IRequestHandler<UpdateJournalEntryCommand>
+    IHiveJournalEntryRepository journalRepository,
+    IHiveRepository hiveRepository,
+    IApiaryRepository apiaryRepository) : IRequestHandler<UpdateJournalEntryCommand>
 {
     public async Task Handle(UpdateJournalEntryCommand request, CancellationToken ct)
     {
         var entry = await journalRepository.GetByIdAsync(request.EntryId, ct);
 
         if (entry is null)
-            throw new Exception("Zapis u dnevniku nije pronađen.");
+            throw new KeyNotFoundException("Zapis u dnevniku nije pronađen.");
 
         if (entry.HiveId != request.HiveId)
-            throw new Exception("Zapis ne pripada ovoj košnici.");
+            throw new UnauthorizedAccessException("Zapis ne pripada ovoj košnici.");
+
+        var hive = await hiveRepository.GetByIdAsync(request.HiveId, ct);
+        var apiary = hive is null ? null : await apiaryRepository.GetByIdAsync(hive.ApiaryId, ct);
+        if (apiary is null || apiary.OwnerId != request.BeekeeperId)
+            throw new UnauthorizedAccessException("Nemate pristup ovoj košnici.");
 
         entry.Update(
             request.EntryDate,

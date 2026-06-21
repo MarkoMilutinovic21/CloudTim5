@@ -55,7 +55,8 @@ public class GetNearbyCropsQueryHandler(
                 .OrderBy(item => item.DistanceKm)
                 .FirstOrDefault();
 
-            if (request.RadiusKm is > 0 && nearestApiary is not null && nearestApiary.DistanceKm > request.RadiusKm)
+            double radiusKm = request.RadiusKm is > 0 ? request.RadiusKm.Value : 5;
+            if (nearestApiary is null || nearestApiary.DistanceKm > radiusKm)
             {
                 continue;
             }

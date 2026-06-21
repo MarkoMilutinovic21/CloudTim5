@@ -19,8 +19,15 @@ public class SprayingRecordRepository(IOptions<AzureTableOptions> options) : ISp
             PartitionKey = record.ParcelId.ToString(),
             RowKey = record.Id.ToString(),
             StartTime = record.StartTime,
+            EndTime = record.EndTime,
             DurationHours = record.DurationHours,
-            ChemicalName = record.ChemicalName
+            ChemicalName = record.ChemicalName,
+            TreatmentId = record.TreatmentId?.ToString() ?? string.Empty,
+            ParcelName = record.ParcelName,
+            CropName = record.CropName,
+            WeatherDescription = record.WeatherDescription,
+            WindSpeedMs = record.WindSpeedMs,
+            HadPrecipitation = record.HadPrecipitation
         };
 
         await _tableClient.AddEntityAsync(entity, ct);
@@ -42,9 +49,16 @@ public class SprayingRecordRepository(IOptions<AzureTableOptions> options) : ISp
             results.Add(SprayingRecord.Rehydrate(
                 Guid.Parse(entity.RowKey),
                 entity.StartTime,
+                entity.EndTime == default ? entity.StartTime.AddHours(entity.DurationHours) : entity.EndTime,
                 entity.DurationHours,
                 entity.ChemicalName,
-                parcelId));
+                parcelId,
+                Guid.TryParse(entity.TreatmentId, out Guid treatmentId) ? treatmentId : null,
+                entity.ParcelName,
+                entity.CropName,
+                entity.WeatherDescription,
+                entity.WindSpeedMs,
+                entity.HadPrecipitation));
         }
 
         IEnumerable<SprayingRecord> filtered = results;
@@ -56,5 +70,34 @@ public class SprayingRecordRepository(IOptions<AzureTableOptions> options) : ISp
             filtered = filtered.Where(r => r.StartTime.Date <= to.Value.Date);
 
         return filtered.OrderByDescending(r => r.StartTime).ToList().AsReadOnly();
+    }
+
+    public async Task<SprayingRecord?> GetByTreatmentIdAsync(
+        Guid treatmentId,
+        CancellationToken ct = default)
+    {
+        await _tableClient.CreateIfNotExistsAsync(ct);
+        string treatmentIdValue = treatmentId.ToString();
+        await foreach (SprayingRecordEntity entity in _tableClient.QueryAsync<SprayingRecordEntity>(
+            record => record.TreatmentId == treatmentIdValue,
+            cancellationToken: ct))
+        {
+            Guid parcelId = Guid.Parse(entity.PartitionKey);
+            return SprayingRecord.Rehydrate(
+                Guid.Parse(entity.RowKey),
+                entity.StartTime,
+                entity.EndTime == default ? entity.StartTime.AddHours(entity.DurationHours) : entity.EndTime,
+                entity.DurationHours,
+                entity.ChemicalName,
+                parcelId,
+                treatmentId,
+                entity.ParcelName,
+                entity.CropName,
+                entity.WeatherDescription,
+                entity.WindSpeedMs,
+                entity.HadPrecipitation);
+        }
+
+        return null;
     }
 }

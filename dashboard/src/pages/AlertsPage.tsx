@@ -29,13 +29,14 @@ function AlertsPage() {
       )
 
       setAlerts(response.data)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Greska pri ucitavanju upozorenja:', err)
 
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      if (response?.status === 401 || response?.status === 403) {
         setError('Nemate pristup upozorenjima. Prijavite se kao pcelar.')
-      } else if (err.response) {
-        setError(`Greska pri ucitavanju upozorenja. Status: ${err.response.status}`)
+      } else if (response) {
+        setError(`Greska pri ucitavanju upozorenja. Status: ${response.status}`)
       } else {
         setError('Backend nije dostupan.')
       }
@@ -46,6 +47,8 @@ function AlertsPage() {
 
   useEffect(() => {
     fetchAlerts()
+    // Initial load only; explicit refreshes call the same function.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const formatDateTime = (value: string) =>

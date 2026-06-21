@@ -169,6 +169,13 @@ function DashboardPage() {
                 Pregled rizika za pcelinjak i kosnice
               </p>
             </div>
+            <button
+              onClick={() => navigate('/beekeeper/settings')}
+              className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-left hover:border-yellow-500 transition-colors"
+            >
+              <h2 className="text-white font-bold text-lg">Podešavanja upozorenja</h2>
+              <p className="text-slate-400 text-sm mt-2">Podesite prag naglog pada težine.</p>
+            </button>
           </div>
         )}
       </div>

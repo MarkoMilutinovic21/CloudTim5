@@ -5,20 +5,6 @@ using SmartApiary.Simulator.Models;
 
 public class DeviceClient(HttpClient httpClient)
 {
-    public async Task<RegisterDeviceResponse> RegisterAsync(
-        string serialNumber,
-        Guid hiveId,
-        CancellationToken ct = default)
-    {
-        RegisterDeviceRequest request = new()
-        {
-            SerialNumber = serialNumber,
-            HiveId = hiveId
-        };
-
-        return await PostRegisterDeviceAsync(request, ct);
-    }
-
     public async Task<RegisterDeviceResponse> HandshakeAsync(
         string serialNumber,
         Guid deviceUuid,

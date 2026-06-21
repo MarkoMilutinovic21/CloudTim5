@@ -74,6 +74,11 @@ namespace SmartApiary.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<double>("WeightDropThresholdKg")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("float")
+                        .HasDefaultValue(10.0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")

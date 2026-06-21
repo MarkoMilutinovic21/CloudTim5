@@ -20,6 +20,7 @@ interface NotificationStatusOverview {
   totalTreatments: number
   scheduledTreatments: number
   cancelledTreatments: number
+  completedTreatments: number
   totalNotifiedBeekeepers: number
   items: NotificationStatusItem[]
 }
@@ -43,11 +44,12 @@ function NotificationStatusPage() {
       )
 
       setOverview(response.data)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const response = axios.isAxiosError(err) ? err.response : undefined
       console.error('Greska pri ucitavanju statusa obavestenja:', err)
 
-      if (err.response) {
-        setError(`Greska pri ucitavanju statusa obavestenja. Status: ${err.response.status}`)
+      if (response) {
+        setError(`Greska pri ucitavanju statusa obavestenja. Status: ${response.status}`)
       } else {
         setError('Greska pri ucitavanju statusa obavestenja. Backend nije dostupan.')
       }
@@ -58,11 +60,14 @@ function NotificationStatusPage() {
 
   useEffect(() => {
     fetchNotificationStatus()
+    // Initial load only; the refresh button invokes the same function.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const getTreatmentStatusLabel = (status: string) => {
     if (status === 'Cancelled') return 'Otkazano'
     if (status === 'Scheduled') return 'Zakazano'
+    if (status === 'Completed') return 'Izvršeno'
 
     return status
   }
@@ -135,7 +140,7 @@ function NotificationStatusPage() {
 
         {overview && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
                 <p className="text-slate-400 text-sm">Ukupno najava</p>
                 <p className="text-3xl font-bold text-white mt-2">{overview.totalTreatments}</p>
@@ -149,6 +154,10 @@ function NotificationStatusPage() {
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
                 <p className="text-slate-400 text-sm">Otkazano</p>
                 <p className="text-3xl font-bold text-red-300 mt-2">{overview.cancelledTreatments}</p>
+              </div>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <p className="text-slate-400 text-sm">Izvršeno</p>
+                <p className="text-3xl font-bold text-green-300 mt-2">{overview.completedTreatments}</p>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
